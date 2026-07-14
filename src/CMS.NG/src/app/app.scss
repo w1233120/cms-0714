@@ -1,0 +1,150 @@
+$topbar-bg: #3f51b5;
+$sidebar-width: 260px;
+$accent: #3f51b5;
+$border-color: #e9ecef;
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topbar {
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1rem;
+  background: $topbar-bg;
+  color: #fff;
+
+  &__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+  }
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+}
+
+.app-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.sidebar {
+  width: $sidebar-width;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid $border-color;
+  overflow-y: auto;
+  transition:
+    width 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.app-shell--collapsed .sidebar {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-right: none;
+}
+
+.menu {
+  padding: 1rem 0;
+}
+
+.menu-group {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    padding: 0.65rem 1.25rem;
+    border: none;
+    background: none;
+    color: #495057;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+
+    i:first-child {
+      font-size: 1rem;
+      color: #6c757d;
+    }
+
+    &:hover {
+      background: #f8f9fb;
+    }
+  }
+
+  &__label {
+    flex: 1;
+  }
+
+  &__chevron {
+    font-size: 0.75rem;
+    color: #adb5bd;
+    transition: transform 0.2s ease;
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__items {
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem 0 0.5rem;
+  }
+}
+
+.menu-item {
+  display: block;
+  padding: 0.55rem 1.25rem 0.55rem 3rem;
+  color: #495057;
+  text-decoration: none;
+  font-size: 0.9rem;
+  border-left: 3px solid transparent;
+
+  &:hover {
+    background: #f8f9fb;
+    color: $accent;
+  }
+}
+
+.menu-item--active {
+  background: #eef1fb;
+  color: $accent;
+  font-weight: 600;
+  border-left-color: $accent;
+}
+
+.app-content {
+  flex: 1;
+  min-width: 0;
+  background: #f4f6f9;
+  padding: 1.5rem;
+  overflow: auto;
+}

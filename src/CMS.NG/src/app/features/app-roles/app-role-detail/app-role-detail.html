@@ -1,0 +1,46 @@
+@if (role) {
+  <div class="form-header">
+    <h2>檢視角色</h2>
+    <div class="form-header__actions">
+      <p-button label="返回" icon="pi pi-arrow-left" severity="secondary" (onClick)="back()" />
+      <p-button label="編輯" icon="pi pi-pencil" (onClick)="edit()" />
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3>角色資料</h3>
+
+    <div class="field">
+      <label>角色代碼</label>
+      <div class="value">{{ role.roleId }}</div>
+    </div>
+
+    <div class="field">
+      <label>角色名稱</label>
+      <div class="value">{{ role.roleName }}</div>
+    </div>
+
+    <div class="field">
+      <label>權限等級</label>
+      <div class="value">{{ role.permissionLevel }}</div>
+    </div>
+
+    <div class="field">
+      <label>描述</label>
+      <div class="value">{{ role.description }}</div>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3>使用者（{{ role.userCount }}）</h3>
+    @if (userLabels.length > 0) {
+      <ul class="user-list">
+        @for (label of userLabels; track label) {
+          <li>{{ label }}</li>
+        }
+      </ul>
+    } @else {
+      <div class="value">尚無使用者</div>
+    }
+  </div>
+}

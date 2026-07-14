@@ -1,0 +1,46 @@
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+}
+
+.form-card {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+
+  h3 {
+    margin-top: 0;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+
+    input,
+    p-inputnumber,
+    p-multiselect {
+      width: 100%;
+    }
+
+    .required {
+      color: #e24c4c;
+    }
+  }
+}
