@@ -1,0 +1,47 @@
+<p-toast />
+
+<div class="form-header">
+  <h2>{{ isEdit ? '編輯發布狀態' : '新增發布狀態' }}</h2>
+  <div class="form-header__actions">
+    <p-button label="取消" icon="pi pi-times" severity="secondary" (onClick)="cancel()" />
+    <p-button label="儲存" icon="pi pi-check" (onClick)="save()" />
+  </div>
+</div>
+
+<form [formGroup]="form">
+  <div class="form-card">
+    <h3>發布狀態資料</h3>
+
+    <div class="field">
+      <label for="pkid">主代碼 <span class="required">*</span></label>
+      <p-inputNumber
+        inputId="pkid"
+        formControlName="pkid"
+        [useGrouping]="false"
+        [min]="0"
+        [max]="255"
+        placeholder="請輸入主代碼（0–255）"
+      />
+    </div>
+
+    <div class="field">
+      <label for="description">狀態說明 <span class="required">*</span></label>
+      <input pInputText id="description" formControlName="description" maxlength="50" />
+    </div>
+
+    <div class="field field--checkbox">
+      <p-checkbox inputId="isDraft" formControlName="isDraft" [binary]="true" />
+      <label for="isDraft">草稿</label>
+    </div>
+
+    <div class="field field--checkbox">
+      <p-checkbox inputId="isPublished" formControlName="isPublished" [binary]="true" />
+      <label for="isPublished">已發布</label>
+    </div>
+
+    <div class="field field--checkbox">
+      <p-checkbox inputId="isDiscontinued" formControlName="isDiscontinued" [binary]="true" />
+      <label for="isDiscontinued">已下架</label>
+    </div>
+  </div>
+</form>

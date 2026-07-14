@@ -1,0 +1,75 @@
+<p-toast />
+<p-confirmDialog />
+
+<div class="list-header">
+  <div class="list-header__title">
+    <h2>合作廠商 Partner</h2>
+    <span class="subtitle">課程／認證的合作廠商主資料</span>
+  </div>
+  <div class="list-header__actions">
+    <p-button label="搜尋條件" icon="pi pi-filter" severity="secondary" (onClick)="filterVisible = true" />
+    <p-button label="新增" icon="pi pi-plus" (onClick)="addNew()" />
+  </div>
+</div>
+
+<p-table
+  [value]="partners"
+  [paginator]="true"
+  [rows]="rows"
+  [first]="first"
+  [rowsPerPageOptions]="[10, 20, 50]"
+  [sortField]="sortField"
+  [sortOrder]="sortOrder"
+  (onSort)="onSort($event)"
+  (onPage)="onPage($event)"
+  dataKey="pkid"
+>
+  <ng-template #header>
+    <tr>
+      <th pSortableColumn="pkid">主代碼 <p-sortIcon field="pkid" /></th>
+      <th pSortableColumn="name">廠商名稱 <p-sortIcon field="name" /></th>
+      <th pSortableColumn="appKey">關鍵字 <p-sortIcon field="appKey" /></th>
+      <th pSortableColumn="nameOnPartnerMenu">選單顯示名稱 <p-sortIcon field="nameOnPartnerMenu" /></th>
+      <th pSortableColumn="nameOnCourseDetailPage">
+        課程詳細頁顯示名稱 <p-sortIcon field="nameOnCourseDetailPage" />
+      </th>
+      <th pSortableColumn="displayOrder">顯示順序 <p-sortIcon field="displayOrder" /></th>
+      <th pSortableColumn="imageFilename">圖片檔名 <p-sortIcon field="imageFilename" /></th>
+      <th>操作</th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-partner>
+    <tr>
+      <td>{{ partner.pkid }}</td>
+      <td>{{ partner.name }}</td>
+      <td>{{ partner.appKey }}</td>
+      <td>{{ partner.nameOnPartnerMenu }}</td>
+      <td>{{ partner.nameOnCourseDetailPage }}</td>
+      <td>{{ partner.displayOrder }}</td>
+      <td>{{ partner.imageFilename || '—' }}</td>
+      <td class="actions">
+        <p-button icon="pi pi-eye" severity="secondary" [text]="true" (onClick)="view(partner)" />
+        <p-button icon="pi pi-pencil" severity="info" [text]="true" (onClick)="edit(partner)" />
+        <p-button icon="pi pi-trash" severity="danger" [text]="true" (onClick)="remove(partner)" />
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #emptymessage>
+    <tr>
+      <td colspan="8">查無資料</td>
+    </tr>
+  </ng-template>
+</p-table>
+
+<p-drawer [(visible)]="filterVisible" header="搜尋條件" position="right">
+  <form [formGroup]="filterForm" class="filter-form" (ngSubmit)="search()">
+    <div class="field">
+      <label for="keyword">關鍵字</label>
+      <input pInputText id="keyword" formControlName="keyword" placeholder="廠商名稱／關鍵字／顯示名稱" />
+    </div>
+    <div class="filter-form__actions">
+      <p-button label="重設" severity="secondary" type="button" (onClick)="resetFilters()" />
+      <p-button label="搜尋" type="submit" />
+    </div>
+  </form>
+</p-drawer>

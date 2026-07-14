@@ -13,4 +13,28 @@ public class LookupsController(ILookupRepository repository) : ControllerBase
     {
         return Ok(await repository.GetAppUsersAsync());
     }
+
+    [HttpGet("app-roles")]
+    public async Task<ActionResult<IEnumerable<AppRoleLookup>>> GetAppRoles()
+    {
+        return Ok(await repository.GetAppRolesAsync());
+    }
+
+    [HttpGet("publish-statuses")]
+    public async Task<ActionResult<IEnumerable<PublishStatusLookup>>> GetPublishStatuses()
+    {
+        return Ok(await repository.GetPublishStatusesAsync());
+    }
+
+    [HttpGet("partners")]
+    public async Task<ActionResult<IEnumerable<PartnerLookup>>> GetPartners()
+    {
+        return Ok(await repository.GetPartnersAsync());
+    }
+
+    [HttpGet("course-groups")]
+    public async Task<ActionResult<IEnumerable<CourseGroupLookup>>> GetCourseGroups()
+    {
+        return Ok(await repository.GetCourseGroupsAsync());
+    }
 }

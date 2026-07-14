@@ -1,0 +1,48 @@
+<p-toast />
+
+<div class="form-header">
+  <h2>{{ isEdit ? '編輯使用者' : '新增使用者' }}</h2>
+  <div class="form-header__actions">
+    <p-button label="取消" icon="pi pi-times" severity="secondary" (onClick)="cancel()" />
+    <p-button label="儲存" icon="pi pi-check" (onClick)="save()" />
+  </div>
+</div>
+
+<form [formGroup]="form">
+  <div class="form-card">
+    <h3>使用者資料</h3>
+
+    <div class="field">
+      <label for="userId">使用者代碼 <span class="required">*</span></label>
+      <input pInputText id="userId" formControlName="userId" maxlength="200" placeholder="請輸入使用者代碼" />
+    </div>
+
+    <div class="field">
+      <label for="userName">使用者名稱 <span class="required">*</span></label>
+      <input pInputText id="userName" formControlName="userName" maxlength="200" />
+    </div>
+
+    <div class="field field--checkbox">
+      <p-checkbox inputId="isActive" formControlName="isActive" [binary]="true" />
+      <label for="isActive">啟用</label>
+    </div>
+
+    @if (!isEdit) {
+      <p class="hint">新帳號的密碼會自動設定為系統預設密碼，使用者可於登入後自行變更。</p>
+    }
+  </div>
+
+  <div class="form-card">
+    <h3>角色</h3>
+    <p-multiSelect
+      formControlName="roleIds"
+      [options]="roleOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="選擇角色（可複選）"
+      appendTo="body"
+      [filter]="true"
+      [maxSelectedLabels]="9999"
+    />
+  </div>
+</form>

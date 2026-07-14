@@ -1,0 +1,63 @@
+<p-toast />
+<p-confirmDialog />
+
+<div class="list-header">
+  <div class="list-header__title">
+    <h2>課程群組 CourseGroup</h2>
+    <span class="subtitle">課程分類群組主資料</span>
+  </div>
+  <div class="list-header__actions">
+    <p-button label="搜尋條件" icon="pi pi-filter" severity="secondary" (onClick)="filterVisible = true" />
+    <p-button label="新增" icon="pi pi-plus" (onClick)="addNew()" />
+  </div>
+</div>
+
+<p-table
+  [value]="courseGroups"
+  [paginator]="true"
+  [rows]="rows"
+  [first]="first"
+  [rowsPerPageOptions]="[10, 20, 50]"
+  [sortField]="sortField"
+  [sortOrder]="sortOrder"
+  (onSort)="onSort($event)"
+  (onPage)="onPage($event)"
+  dataKey="pkid"
+>
+  <ng-template #header>
+    <tr>
+      <th pSortableColumn="pkid">主代碼 <p-sortIcon field="pkid" /></th>
+      <th pSortableColumn="description">群組名稱 <p-sortIcon field="description" /></th>
+      <th>操作</th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-courseGroup>
+    <tr>
+      <td>{{ courseGroup.pkid }}</td>
+      <td>{{ courseGroup.description }}</td>
+      <td class="actions">
+        <p-button icon="pi pi-eye" severity="secondary" [text]="true" (onClick)="view(courseGroup)" />
+        <p-button icon="pi pi-pencil" severity="info" [text]="true" (onClick)="edit(courseGroup)" />
+        <p-button icon="pi pi-trash" severity="danger" [text]="true" (onClick)="remove(courseGroup)" />
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #emptymessage>
+    <tr>
+      <td colspan="3">查無資料</td>
+    </tr>
+  </ng-template>
+</p-table>
+
+<p-drawer [(visible)]="filterVisible" header="搜尋條件" position="right">
+  <form [formGroup]="filterForm" class="filter-form" (ngSubmit)="search()">
+    <div class="field">
+      <label for="keyword">關鍵字</label>
+      <input pInputText id="keyword" formControlName="keyword" placeholder="群組名稱" />
+    </div>
+    <div class="filter-form__actions">
+      <p-button label="重設" severity="secondary" type="button" (onClick)="resetFilters()" />
+      <p-button label="搜尋" type="submit" />
+    </div>
+  </form>
+</p-drawer>

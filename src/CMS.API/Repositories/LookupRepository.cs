@@ -12,4 +12,32 @@ public class LookupRepository(IDbConnectionFactory connectionFactory) : ILookupR
         return await connection.QueryAsync<AppUserLookup>(
             "SELECT UserId, UserName FROM AppUser ORDER BY UserName ASC");
     }
+
+    public async Task<IEnumerable<AppRoleLookup>> GetAppRolesAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<AppRoleLookup>(
+            "SELECT RoleId, RoleName FROM AppRole ORDER BY RoleName ASC");
+    }
+
+    public async Task<IEnumerable<PublishStatusLookup>> GetPublishStatusesAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<PublishStatusLookup>(
+            "SELECT pkid, Description FROM PublishStatus ORDER BY pkid ASC");
+    }
+
+    public async Task<IEnumerable<PartnerLookup>> GetPartnersAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<PartnerLookup>(
+            "SELECT pkid, Name FROM Partner ORDER BY DisplayOrder ASC");
+    }
+
+    public async Task<IEnumerable<CourseGroupLookup>> GetCourseGroupsAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<CourseGroupLookup>(
+            "SELECT pkid, Description FROM CourseGroup ORDER BY pkid ASC");
+    }
 }

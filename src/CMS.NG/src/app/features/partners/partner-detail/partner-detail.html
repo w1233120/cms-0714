@@ -1,0 +1,48 @@
+@if (partner) {
+  <div class="form-header">
+    <h2>檢視合作廠商</h2>
+    <div class="form-header__actions">
+      <p-button label="返回" icon="pi pi-arrow-left" severity="secondary" (onClick)="back()" />
+      <p-button label="編輯" icon="pi pi-pencil" (onClick)="edit()" />
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3>合作廠商資料</h3>
+
+    <div class="field">
+      <label>主代碼</label>
+      <div class="value">{{ partner.pkid }}</div>
+    </div>
+
+    <div class="field">
+      <label>廠商名稱</label>
+      <div class="value">{{ partner.name }}</div>
+    </div>
+
+    <div class="field">
+      <label>關鍵字</label>
+      <div class="value">{{ partner.appKey }}</div>
+    </div>
+
+    <div class="field">
+      <label>選單顯示名稱</label>
+      <div class="value">{{ partner.nameOnPartnerMenu }}</div>
+    </div>
+
+    <div class="field">
+      <label>課程詳細頁顯示名稱</label>
+      <div class="value">{{ partner.nameOnCourseDetailPage }}</div>
+    </div>
+
+    <div class="field">
+      <label>顯示順序</label>
+      <div class="value">{{ partner.displayOrder }}</div>
+    </div>
+
+    <div class="field">
+      <label>圖片檔名</label>
+      <div class="value">{{ partner.imageFilename || '—' }}</div>
+    </div>
+  </div>
+}

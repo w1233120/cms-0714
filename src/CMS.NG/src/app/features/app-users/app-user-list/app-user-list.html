@@ -1,0 +1,106 @@
+<p-toast />
+<p-confirmDialog />
+
+<div class="list-header">
+  <div class="list-header__title">
+    <h2>使用者 AppUser</h2>
+    <span class="subtitle">系統使用者帳號</span>
+  </div>
+  <div class="list-header__actions">
+    <p-button label="搜尋條件" icon="pi pi-filter" severity="secondary" (onClick)="filterVisible = true" />
+    <p-button label="新增" icon="pi pi-plus" (onClick)="addNew()" />
+  </div>
+</div>
+
+<p-table
+  [value]="users"
+  [paginator]="true"
+  [rows]="rows"
+  [first]="first"
+  [rowsPerPageOptions]="[10, 20, 50]"
+  [sortField]="sortField"
+  [sortOrder]="sortOrder"
+  (onSort)="onSort($event)"
+  (onPage)="onPage($event)"
+  dataKey="userId"
+>
+  <ng-template #header>
+    <tr>
+      <th pSortableColumn="pkid">主代碼 <p-sortIcon field="pkid" /></th>
+      <th pSortableColumn="userId">使用者代碼 <p-sortIcon field="userId" /></th>
+      <th pSortableColumn="userName">使用者名稱 <p-sortIcon field="userName" /></th>
+      <th pSortableColumn="isActive">啟用 <p-sortIcon field="isActive" /></th>
+      <th pSortableColumn="passwordUpdatedTime">密碼更新時間 <p-sortIcon field="passwordUpdatedTime" /></th>
+      <th pSortableColumn="roleCount">角色數 <p-sortIcon field="roleCount" /></th>
+      <th>操作</th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-user>
+    <tr>
+      <td>{{ user.pkid }}</td>
+      <td>{{ user.userId }}</td>
+      <td>{{ user.userName }}</td>
+      <td class="flag">
+        <i class="pi" [class.pi-check]="user.isActive" [class.pi-minus]="!user.isActive"></i>
+      </td>
+      <td>
+        {{ user.passwordUpdatedTime ? (user.passwordUpdatedTime + 'Z' | date: 'yyyy/MM/dd HH:mm') : '—' }}
+      </td>
+      <td>{{ user.roleCount }}</td>
+      <td class="actions">
+        <p-button icon="pi pi-eye" severity="secondary" [text]="true" (onClick)="view(user)" />
+        <p-button icon="pi pi-pencil" severity="info" [text]="true" (onClick)="edit(user)" />
+        <p-button icon="pi pi-trash" severity="danger" [text]="true" (onClick)="remove(user)" />
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #emptymessage>
+    <tr>
+      <td colspan="7">查無資料</td>
+    </tr>
+  </ng-template>
+</p-table>
+
+<p-drawer [(visible)]="filterVisible" header="搜尋條件" position="right">
+  <form [formGroup]="filterForm" class="filter-form" (ngSubmit)="search()">
+    <div class="field">
+      <label for="keyword">關鍵字</label>
+      <input pInputText id="keyword" formControlName="keyword" placeholder="使用者代碼／使用者名稱" />
+    </div>
+    <div class="field">
+      <label for="isActive">啟用</label>
+      <p-select
+        inputId="isActive"
+        formControlName="isActive"
+        [options]="flagOptions"
+        optionLabel="label"
+        optionValue="value"
+        appendTo="body"
+      />
+    </div>
+    <div class="field">
+      <label for="passwordUpdatedFrom">密碼更新時間（起）</label>
+      <p-datepicker
+        inputId="passwordUpdatedFrom"
+        formControlName="passwordUpdatedFrom"
+        dateFormat="yy/mm/dd"
+        appendTo="body"
+        [showClear]="true"
+      />
+    </div>
+    <div class="field">
+      <label for="passwordUpdatedTo">密碼更新時間（迄）</label>
+      <p-datepicker
+        inputId="passwordUpdatedTo"
+        formControlName="passwordUpdatedTo"
+        dateFormat="yy/mm/dd"
+        appendTo="body"
+        [showClear]="true"
+      />
+    </div>
+    <div class="filter-form__actions">
+      <p-button label="重設" severity="secondary" type="button" (onClick)="resetFilters()" />
+      <p-button label="搜尋" type="submit" />
+    </div>
+  </form>
+</p-drawer>

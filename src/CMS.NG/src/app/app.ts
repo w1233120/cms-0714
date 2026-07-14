@@ -23,7 +23,19 @@ export class App {
     {
       label: '系統管理 Admin',
       icon: 'pi pi-shield',
-      items: [{ label: '角色 AppRole', route: '/app-roles' }]
+      items: [
+        { label: '使用者 AppUser', route: '/app-users' },
+        { label: '角色 AppRole', route: '/app-roles' },
+        { label: '發布狀態 PublishStatus', route: '/publish-statuses' }
+      ]
+    },
+    {
+      label: '課程管理 Course',
+      icon: 'pi pi-book',
+      items: [
+        { label: '合作廠商 Partner', route: '/partners' },
+        { label: '課程群組 CourseGroup', route: '/course-groups' }
+      ]
     }
   ];
 

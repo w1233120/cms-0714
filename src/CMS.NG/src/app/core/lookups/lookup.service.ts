@@ -2,7 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@env';
-import { AppUserLookup } from './lookup.model';
+import {
+  AppRoleLookup,
+  AppUserLookup,
+  CourseGroupLookup,
+  PartnerLookup,
+  PublishStatusLookup
+} from './lookup.model';
 
 @Injectable({ providedIn: 'root' })
 export class LookupService {
@@ -11,5 +17,21 @@ export class LookupService {
 
   getAppUsers(): Observable<AppUserLookup[]> {
     return this.http.get<AppUserLookup[]>(`${this.baseUrl}/app-users`);
+  }
+
+  getAppRoles(): Observable<AppRoleLookup[]> {
+    return this.http.get<AppRoleLookup[]>(`${this.baseUrl}/app-roles`);
+  }
+
+  getPublishStatuses(): Observable<PublishStatusLookup[]> {
+    return this.http.get<PublishStatusLookup[]>(`${this.baseUrl}/publish-statuses`);
+  }
+
+  getPartners(): Observable<PartnerLookup[]> {
+    return this.http.get<PartnerLookup[]>(`${this.baseUrl}/partners`);
+  }
+
+  getCourseGroups(): Observable<CourseGroupLookup[]> {
+    return this.http.get<CourseGroupLookup[]>(`${this.baseUrl}/course-groups`);
   }
 }
