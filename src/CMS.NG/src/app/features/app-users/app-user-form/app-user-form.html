@@ -1,8 +1,12 @@
 <p-toast />
+<p-confirmDialog />
 
 <div class="form-header">
   <h2>{{ isEdit ? '編輯使用者' : '新增使用者' }}</h2>
   <div class="form-header__actions">
+    @if (isEdit && auth.isAdmin()) {
+      <p-button label="重設密碼" icon="pi pi-key" severity="warn" (onClick)="resetPassword()" />
+    }
     <p-button label="取消" icon="pi pi-times" severity="secondary" (onClick)="cancel()" />
     <p-button label="儲存" icon="pi pi-check" (onClick)="save()" />
   </div>

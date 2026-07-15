@@ -1,0 +1,109 @@
+<div class="profile-page">
+  <form class="profile-card" [formGroup]="form" (ngSubmit)="save()">
+    <h2>我的資料 My Profile</h2>
+
+    <div class="field">
+      <label>帳號 UserId</label>
+      <div class="field__readonly">{{ auth.userId() }}</div>
+    </div>
+
+    <div class="field">
+      <label for="userName">名稱 UserName</label>
+      <input pInputText id="userName" formControlName="userName" autocomplete="off" />
+      @if (form.controls.userName.touched && form.controls.userName.invalid) {
+        <small class="field__error">請輸入名稱 Name is required</small>
+      }
+    </div>
+
+    <div class="field">
+      <label>角色 Roles</label>
+      @if (auth.roles().length) {
+        <div class="field__roles">
+          @for (role of auth.roles(); track role) {
+            <span class="role-chip">{{ role }}</span>
+          }
+        </div>
+      } @else {
+        <div class="field__readonly">—</div>
+      }
+    </div>
+
+    @if (savedMessage()) {
+      <p class="profile-card__saved">{{ savedMessage() }}</p>
+    }
+    @if (errorMessage()) {
+      <p class="profile-card__error">{{ errorMessage() }}</p>
+    }
+
+    <p-button
+      type="submit"
+      label="儲存 Save"
+      icon="pi pi-save"
+      [loading]="saving()"
+      styleClass="profile-card__submit"
+    />
+  </form>
+
+  <form class="profile-card" [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+    <h2>變更密碼 Change Password</h2>
+
+    <div class="field">
+      <label for="currentPassword">目前密碼 Current password</label>
+      <input
+        pInputText
+        id="currentPassword"
+        type="password"
+        formControlName="currentPassword"
+        autocomplete="current-password"
+      />
+      @if (passwordForm.controls.currentPassword.touched && passwordForm.controls.currentPassword.invalid) {
+        <small class="field__error">請輸入目前密碼 Current password is required</small>
+      }
+    </div>
+
+    <div class="field">
+      <label for="newPassword">新密碼 New password</label>
+      <input
+        pInputText
+        id="newPassword"
+        type="password"
+        formControlName="newPassword"
+        autocomplete="new-password"
+      />
+      @if (passwordForm.controls.newPassword.touched && passwordForm.controls.newPassword.invalid) {
+        <small class="field__error">{{ complexityMessage }}</small>
+      }
+    </div>
+
+    <div class="field">
+      <label for="confirmNewPassword">確認新密碼 Confirm new password</label>
+      <input
+        pInputText
+        id="confirmNewPassword"
+        type="password"
+        formControlName="confirmNewPassword"
+        autocomplete="new-password"
+      />
+      @if (passwordForm.controls.confirmNewPassword.touched && passwordForm.controls.confirmNewPassword.invalid) {
+        <small class="field__error">請確認新密碼 Please confirm the new password</small>
+      } @else if (passwordForm.errors?.['mismatch'] && passwordForm.controls.confirmNewPassword.touched) {
+        <small class="field__error">新密碼與確認密碼不一致 New password and confirmation do not match</small>
+      }
+    </div>
+
+    @if (passwordSavedMessage()) {
+      <p class="profile-card__saved">{{ passwordSavedMessage() }}</p>
+    }
+    @if (passwordErrorMessage()) {
+      <p class="profile-card__error">{{ passwordErrorMessage() }}</p>
+    }
+
+    <p-button
+      type="submit"
+      label="變更密碼 Change Password"
+      icon="pi pi-key"
+      [loading]="changingPassword()"
+      styleClass="profile-card__submit"
+    />
+  </form>
+</div>

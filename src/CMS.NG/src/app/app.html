@@ -1,45 +1,63 @@
-<div class="app-shell" [class.app-shell--collapsed]="sidebarCollapsed()">
-  <header class="topbar">
-    <button type="button" class="topbar__toggle" (click)="toggleSidebar()" aria-label="切換選單">
-      <i class="pi pi-bars"></i>
-    </button>
-    <div class="topbar__brand">
-      <i class="pi pi-th-large"></i>
-      <span>CMS</span>
+@if (auth.isAuthenticated()) {
+  <div class="app-shell" [class.app-shell--collapsed]="sidebarCollapsed()">
+    <header class="topbar">
+      <button type="button" class="topbar__toggle" (click)="toggleSidebar()" aria-label="切換選單">
+        <i class="pi pi-bars"></i>
+      </button>
+      <div class="topbar__brand">
+        <i class="pi pi-th-large"></i>
+        <span>CMS</span>
+      </div>
+      <div class="topbar__user">
+        <a
+          class="topbar__profile"
+          routerLink="/profile"
+          routerLinkActive="topbar__profile--active"
+          title="我的資料 My Profile"
+        >
+          <span class="topbar__username"><i class="pi pi-user"></i> {{ auth.userName() }}</span>
+        </a>
+        <button type="button" class="topbar__logout" (click)="logout()">
+          <i class="pi pi-sign-out"></i>
+          <span>登出 Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <aside class="sidebar">
+        <nav class="menu">
+          @for (group of visibleNavGroups(); track group.label) {
+            <div class="menu-group">
+              <button type="button" class="menu-group__header" (click)="toggleGroup(group.label)">
+                <i [class]="group.icon"></i>
+                <span class="menu-group__label">{{ group.label }}</span>
+                <i
+                  class="pi pi-chevron-down menu-group__chevron"
+                  [class.menu-group__chevron--open]="isExpanded(group.label)"
+                ></i>
+              </button>
+              @if (isExpanded(group.label)) {
+                <ul class="menu-group__items">
+                  @for (item of group.items; track item.route) {
+                    <li>
+                      <a [routerLink]="item.route" routerLinkActive="menu-item--active" class="menu-item">{{
+                        item.label
+                      }}</a>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </nav>
+      </aside>
+
+      <main class="app-content">
+        <router-outlet />
+      </main>
     </div>
-  </header>
-
-  <div class="app-body">
-    <aside class="sidebar">
-      <nav class="menu">
-        @for (group of navGroups; track group.label) {
-          <div class="menu-group">
-            <button type="button" class="menu-group__header" (click)="toggleGroup(group.label)">
-              <i [class]="group.icon"></i>
-              <span class="menu-group__label">{{ group.label }}</span>
-              <i
-                class="pi pi-chevron-down menu-group__chevron"
-                [class.menu-group__chevron--open]="isExpanded(group.label)"
-              ></i>
-            </button>
-            @if (isExpanded(group.label)) {
-              <ul class="menu-group__items">
-                @for (item of group.items; track item.route) {
-                  <li>
-                    <a [routerLink]="item.route" routerLinkActive="menu-item--active" class="menu-item">{{
-                      item.label
-                    }}</a>
-                  </li>
-                }
-              </ul>
-            }
-          </div>
-        }
-      </nav>
-    </aside>
-
-    <main class="app-content">
-      <router-outlet />
-    </main>
   </div>
-</div>
+} @else {
+  <router-outlet />
+}

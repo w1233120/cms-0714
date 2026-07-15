@@ -10,6 +10,7 @@ import { AppUserService } from '../app-user.service';
 import { AppUser } from '../app-user.model';
 import { LookupService } from '../../../core/lookups/lookup.service';
 import { AppRoleLookup } from '../../../core/lookups/lookup.model';
+import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-app-user-detail',
@@ -25,6 +26,8 @@ export class AppUserDetail implements OnInit {
   private readonly lookupService = inject(LookupService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  // Public so the template can gate the Admin-only "reset password" button on auth.isAdmin().
+  readonly auth = inject(AuthService);
 
   user: AppUser | null = null;
   roleLabels: string[] = [];

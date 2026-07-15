@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { App } from './app';
 
@@ -10,15 +12,22 @@ describe('App shell content scrolling', () => {
   let root: HTMLElement | null = null;
 
   beforeEach(async () => {
+    // The shell only renders when authenticated, so seed a signed-in profile.
+    sessionStorage.setItem(
+      'cms-auth',
+      JSON.stringify({ userId: 'helen', userName: 'Helen Wu', accessToken: 'a.b.c' })
+    );
+
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter([])]
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()]
     }).compileComponents();
   });
 
   afterEach(() => {
     root?.remove();
     root = null;
+    sessionStorage.clear();
   });
 
   it('.app-content scrolls internally while topbar/sidebar stay fixed and a sticky toolbar pins', () => {

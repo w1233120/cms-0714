@@ -131,16 +131,21 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
         return rowsAffected > 0;
     }
 
+    // Restores the default password hash and stamps the change time (an admin reset counts
+    // as the password having been updated now — like a self-service change).
+    internal const string ResetPasswordSql = """
+        UPDATE AppUser SET PasswordHash = @PasswordHash, PasswordUpdatedTime = GETDATE()
+        WHERE UserId = @UserId
+        """;
+
     public async Task<bool> ResetPasswordAsync(string userId)
     {
         using var connection = connectionFactory.CreateConnection();
 
         var passwordHash = await GetDefaultPasswordHashAsync(connection);
 
-        var rowsAffected = await connection.ExecuteAsync("""
-            UPDATE AppUser SET PasswordHash = @PasswordHash, PasswordUpdatedTime = NULL
-            WHERE UserId = @UserId
-            """, new { UserId = userId, PasswordHash = passwordHash });
+        var rowsAffected = await connection.ExecuteAsync(
+            ResetPasswordSql, new { UserId = userId, PasswordHash = passwordHash });
 
         return rowsAffected > 0;
     }
@@ -162,6 +167,14 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
         var configValue = await connection.ExecuteScalarAsync<string?>(
             "SELECT configValue FROM SysConfig WHERE configKey = 'appConfig'");
 
+        return HashDefaultPassword(configValue);
+    }
+
+    // Extracts appConfig.defaultPassword from a SysConfig JSON blob and returns its
+    // uppercase-hex SHA256 — the exact format stored in AppUser.PasswordHash (matching
+    // login/change-password). Pure so it can be unit-tested without a database.
+    internal static string HashDefaultPassword(string? configValue)
+    {
         if (string.IsNullOrWhiteSpace(configValue))
         {
             throw new InvalidOperationException("SysConfig row 'appConfig' is missing or empty.");

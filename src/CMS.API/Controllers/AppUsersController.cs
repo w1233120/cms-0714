@@ -1,5 +1,6 @@
 using CMS.API.Models;
 using CMS.API.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CMS.API.Controllers;
@@ -59,7 +60,13 @@ public class AppUsersController(IAppUserRepository repository) : ControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
+    // Resets the target user's password back to the system default. Admin-only: the global
+    // fallback policy already requires authentication, and this attribute additionally
+    // requires the "Admin" role, so a non-Admin caller gets 403 (not just a hidden button).
+    // No password or hash ever crosses the wire — the body is empty and only success/failure
+    // is returned.
     [HttpPost("{id}/reset-password")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ResetPassword(string id)
     {
         var reset = await repository.ResetPasswordAsync(id);

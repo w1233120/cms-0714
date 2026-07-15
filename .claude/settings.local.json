@@ -4,7 +4,18 @@
       "PowerShell(winget install *)",
       "PowerShell(git *)",
       "PowerShell(gh *)",
-      "PowerShell(code *)"
+      "PowerShell(code *)",
+      "Bash(bash ~/.claude/statusline-command.sh)",
+      "Bash(command -v jq)",
+      "Bash(echo \"exit:$?\")",
+      "Read(//c/Program Files/Git/usr/bin/**)",
+      "Read(//c/Program Files/Git/mingw64/bin/**)",
+      "Read(//c/Program Files/Git/**)",
+      "Read(//c//**)",
+      "Bash(command -v node)"
     ]
+  },
+  "skillOverrides": {
+    "crud": "name-only"
   }
 }

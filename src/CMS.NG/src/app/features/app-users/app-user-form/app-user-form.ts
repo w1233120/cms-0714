@@ -8,16 +8,26 @@ import { InputTextModule } from 'primeng/inputtext';
 import { CheckboxModule } from 'primeng/checkbox';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { AppUserService } from '../app-user.service';
 import { AppUserRequest } from '../app-user.model';
 import { LookupService } from '../../../core/lookups/lookup.service';
 import { AppRoleLookup } from '../../../core/lookups/lookup.model';
+import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-app-user-form',
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, CheckboxModule, MultiSelectModule, ToastModule],
-  providers: [MessageService],
+  imports: [
+    ReactiveFormsModule,
+    ButtonModule,
+    InputTextModule,
+    CheckboxModule,
+    MultiSelectModule,
+    ToastModule,
+    ConfirmDialogModule
+  ],
+  providers: [ConfirmationService, MessageService],
   templateUrl: './app-user-form.html',
   styleUrl: './app-user-form.scss'
 })
@@ -27,7 +37,10 @@ export class AppUserForm implements OnInit {
   private readonly router = inject(Router);
   private readonly appUserService = inject(AppUserService);
   private readonly lookupService = inject(LookupService);
+  private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  // Public so the template can gate the Admin-only "reset password" button on auth.isAdmin().
+  readonly auth = inject(AuthService);
 
   isEdit = false;
   userId: string | null = null;
@@ -92,6 +105,35 @@ export class AppUserForm implements OnInit {
       error: (err: HttpErrorResponse) => {
         const summary = err.status === 409 ? '使用者代碼已存在' : '儲存失敗';
         this.messageService.add({ severity: 'error', summary });
+      }
+    });
+  }
+
+  // Admin-only: reset the edited user's password back to the system default. The client
+  // sends only the UserId — no password or hash is ever sent or received. The backend also
+  // enforces the Admin role (403 otherwise), so this button is a convenience, not the gate.
+  resetPassword(): void {
+    if (!this.userId) {
+      return;
+    }
+
+    const userId = this.userId;
+    this.confirmationService.confirm({
+      message: `確定要將使用者「${userId}」的密碼重設為系統預設密碼？`,
+      header: '重設密碼確認',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: '確定',
+      rejectLabel: '取消',
+      accept: () => {
+        this.appUserService.resetPassword(userId).subscribe({
+          next: () =>
+            this.messageService.add({
+              severity: 'success',
+              summary: '重設成功',
+              detail: `使用者 ${userId} 的密碼已重設為預設密碼`
+            }),
+          error: () => this.messageService.add({ severity: 'error', summary: '重設失敗' })
+        });
       }
     });
   }

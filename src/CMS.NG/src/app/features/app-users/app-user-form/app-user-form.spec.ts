@@ -1,17 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { WritableSignal, signal } from '@angular/core';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { ConfirmationService } from 'primeng/api';
 
 import { AppUserForm } from './app-user-form';
 import { AppUserService } from '../app-user.service';
 import { AppUser } from '../app-user.model';
 import { LookupService } from '../../../core/lookups/lookup.service';
+import { AuthService } from '../../../core/auth/auth.service';
 
 describe('AppUserForm', () => {
   let component: AppUserForm;
   let fixture: ComponentFixture<AppUserForm>;
   let appUserServiceSpy: jasmine.SpyObj<AppUserService>;
   let lookupServiceSpy: jasmine.SpyObj<LookupService>;
+  let isAdmin: WritableSignal<boolean>;
 
   const existingUser: AppUser = {
     pkid: 1,
@@ -23,12 +27,16 @@ describe('AppUserForm', () => {
     roleIds: ['Admin']
   };
 
-  function setup(paramMap: Record<string, string>): void {
-    appUserServiceSpy = jasmine.createSpyObj('AppUserService', ['getById', 'create', 'update']);
+  function setup(paramMap: Record<string, string>, admin = false): void {
+    appUserServiceSpy = jasmine.createSpyObj('AppUserService', ['getById', 'create', 'update', 'resetPassword']);
     appUserServiceSpy.getById.and.returnValue(of(existingUser));
+    appUserServiceSpy.resetPassword.and.returnValue(of(undefined));
 
     lookupServiceSpy = jasmine.createSpyObj('LookupService', ['getAppRoles']);
     lookupServiceSpy.getAppRoles.and.returnValue(of([{ roleId: 'Admin', roleName: 'Administrator' }]));
+
+    isAdmin = signal(admin);
+    const authStub = { isAdmin } as Pick<AuthService, 'isAdmin'>;
 
     TestBed.configureTestingModule({
       imports: [AppUserForm],
@@ -36,6 +44,7 @@ describe('AppUserForm', () => {
         provideRouter([]),
         { provide: AppUserService, useValue: appUserServiceSpy },
         { provide: LookupService, useValue: lookupServiceSpy },
+        { provide: AuthService, useValue: authStub },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap: { get: (key: string) => paramMap[key] ?? null } } }
@@ -46,6 +55,10 @@ describe('AppUserForm', () => {
     fixture = TestBed.createComponent(AppUserForm);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  }
+
+  function hasResetButton(): boolean {
+    return (fixture.nativeElement as HTMLElement).textContent?.includes('重設密碼') ?? false;
   }
 
   it('starts with an empty, enabled form in add mode', () => {
@@ -115,5 +128,36 @@ describe('AppUserForm', () => {
     component.save();
 
     expect(appUserServiceSpy.create).not.toHaveBeenCalled();
+  });
+
+  it('shows the reset-password button in edit mode for Admin users', () => {
+    setup({ id: 'helen' }, true);
+
+    expect(hasResetButton()).toBeTrue();
+  });
+
+  it('hides the reset-password button for non-Admin users', () => {
+    setup({ id: 'helen' }, false);
+
+    expect(hasResetButton()).toBeFalse();
+  });
+
+  it('hides the reset-password button in add mode even for Admins', () => {
+    setup({}, true);
+
+    expect(hasResetButton()).toBeFalse();
+  });
+
+  it('resets the password via the service after confirmation', () => {
+    setup({ id: 'helen' }, true);
+    const confirmationService = fixture.debugElement.injector.get(ConfirmationService);
+    spyOn(confirmationService, 'confirm').and.callFake((config) => {
+      config.accept?.();
+      return confirmationService;
+    });
+
+    component.resetPassword();
+
+    expect(appUserServiceSpy.resetPassword).toHaveBeenCalledWith('helen');
   });
 });

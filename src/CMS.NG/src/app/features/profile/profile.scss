@@ -1,0 +1,80 @@
+.profile-page {
+  padding: 1.5rem;
+}
+
+.profile-card {
+  max-width: 480px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 2rem;
+
+  & + & {
+    margin-top: 1.5rem;
+  }
+
+  h2 {
+    margin: 0 0 1.5rem;
+    font-size: 1.1rem;
+    color: #343a40;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 1.1rem;
+
+    label {
+      font-size: 0.85rem;
+      color: #495057;
+    }
+
+    input {
+      width: 100%;
+    }
+
+    &__readonly {
+      font-size: 0.95rem;
+      color: #343a40;
+      padding: 0.4rem 0;
+    }
+
+    &__roles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    &__error {
+      color: #d9534f;
+      font-size: 0.8rem;
+    }
+  }
+
+  .role-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    background: #eef0fb;
+    color: #3f51b5;
+    font-size: 0.8rem;
+  }
+
+  &__saved {
+    margin: 0 0 1rem;
+    color: #2e7d32;
+    font-size: 0.85rem;
+  }
+
+  &__error {
+    margin: 0 0 1rem;
+    color: #d9534f;
+    font-size: 0.85rem;
+  }
+
+  &__submit button {
+    justify-content: center;
+  }
+}

@@ -86,7 +86,50 @@ Double-click cell editing on a list table — see [inline-edit.md](inline-edit.m
 ## Sidebar
 
 Driven by the `navGroups` array in `app.ts` (group label + icon + items); `app.html` just renders it.
-Add the entity's route there, and a lazy `loadChildren` entry in `app.routes.ts`.
+Add the entity's route there, and a lazy `loadChildren` entry in `app.routes.ts`. Groups can carry
+`adminOnly: true`; `visibleNavGroups` filters those out unless `AuthService.isAdmin()` — that is how
+the "系統管理 Admin" group is hidden from non-admins.
+
+## Auth / login
+
+`core/auth/` holds the client half of the JWT flow:
+
+- **`AuthService`** — `login()` POSTs `{ userId, password }` to `/api/Auth/login` and stores the
+  returned `{ userId, userName, accessToken }` profile in **session storage** under `cms-auth`
+  (per-tab, cleared on tab close — never `localStorage`). Exposes signals: `isAuthenticated`,
+  `userName`, `roles`, `isAdmin`. **Roles come from the token, not an API call** — `roles` decodes
+  the JWT payload and reads the .NET `ClaimTypes.Role` URI claim
+  (`http://schemas.microsoft.com/ws/2008/06/identity/claims/role`), which the backend emits verbatim
+  (it is *not* shortened to `role`). `logout()` / `clearSession()` drop the profile.
+- **`authInterceptor`** (registered via `provideHttpClient(withInterceptors([...]))`) — attaches
+  `Authorization: Bearer <token>` to requests whose URL starts with `environment.apiUrl`, and on any
+  `401` calls `clearSession()` + redirects to `/login`.
+- **`authGuard`** (`CanActivateFn`) — guards every feature route; returns a `/login` `UrlTree` when
+  `!isAuthenticated()`. The `login` route itself is unguarded.
+- **App shell** (`app.ts`/`app.html`) renders the topbar/sidebar chrome **only when authenticated**;
+  the login page shows bare. The topbar shows `auth.userName()` and a logout button.
+
+New protected feature routes must carry `canActivate: [authGuard]` in `app.routes.ts` (the login
+route must not).
+
+**Self-service profile** (`features/profile/`, route `/profile`, linked from the topbar username)
+is one page with two independent forms:
+
+- **Rename** — `AuthService.updateUserName()` PUTs `{ userName }` to `/api/Auth/profile`; on success
+  it rewrites the session-storage profile so `auth.userName()` (and thus the shell) refreshes.
+  UserId/roles render read-only.
+- **Change password** — `AuthService.changePassword()` POSTs the three plaintext fields
+  (`currentPassword` / `newPassword` / `confirmNewPassword`) to `/api/Auth/change-password`; **no
+  hash is ever computed or sent client-side.** The form re-checks the backend complexity rule
+  (length ≥ 8 **and** ≥ 3 of upper / lower / digit / symbol) with a reactive validator plus a
+  group-level new==confirm validator, and surfaces the backend's bilingual error message verbatim on
+  a `400`. `profile.spec.ts` covers this client-side validation.
+
+**Admin password reset** is a separate, admin-only action on *another* user (not self-service). The
+"重設密碼" button (confirm dialog + toast) sits on both the AppUser **edit form** and **detail** page,
+each wrapped in `@if (auth.isAdmin())`, and calls `AppUserService.resetPassword(userId)` →
+`POST /api/appusers/{id}/reset-password`. The client sends **only** the `UserId` and receives no
+body — hiding the button is convenience; the backend `[Authorize(Roles = "Admin")]` is the real gate.
 
 ## Tests
 
