@@ -1,0 +1,83 @@
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+
+  &__title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+
+    h2 {
+      margin: 0;
+    }
+
+    .subtitle {
+      color: #8a94a6;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.flag {
+  text-align: center;
+}
+
+.editable {
+  cursor: cell;
+
+  &:hover {
+    background: #f3f6fb;
+  }
+
+  input,
+  p-inputnumber,
+  p-select,
+  p-datepicker {
+    width: 100%;
+  }
+}
+
+.cell-error {
+  display: block;
+  margin-top: 0.2rem;
+  color: #e24c4c;
+  font-size: 0.75rem;
+}
+
+.filter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    input,
+    p-select,
+    p-datepicker {
+      width: 100%;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+}

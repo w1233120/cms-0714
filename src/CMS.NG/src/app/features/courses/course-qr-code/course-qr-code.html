@@ -1,0 +1,17 @@
+<div class="qr">
+  <div class="qr__title">{{ title }}</div>
+
+  @if (qrDataUrl) {
+    <img class="qr__img" [src]="qrDataUrl" [alt]="'QR Code：' + targetUrl" />
+  }
+
+  <a class="qr__url" [href]="targetUrl" target="_blank" rel="noopener">{{ targetUrl }}</a>
+
+  <p-button
+    label="下載 QR Code"
+    icon="pi pi-download"
+    severity="secondary"
+    [disabled]="!qrDataUrl"
+    (onClick)="download()"
+  />
+</div>

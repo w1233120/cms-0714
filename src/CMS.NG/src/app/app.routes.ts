@@ -30,5 +30,9 @@ export const routes: Routes = [
       import('./features/featured-promo-items/featured-promo-items.routes').then(
         (m) => m.FEATURED_PROMO_ITEM_ROUTES
       )
+  },
+  {
+    path: 'courses',
+    loadChildren: () => import('./features/courses/courses.routes').then((m) => m.COURSE_ROUTES)
   }
 ];

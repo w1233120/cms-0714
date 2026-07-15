@@ -1,0 +1,115 @@
+<p-toast />
+
+<div class="form-header">
+  <h2>{{ isEdit ? '編輯課程' : '新增課程' }}</h2>
+  <div class="form-header__actions">
+    <p-button label="取消" icon="pi pi-times" severity="secondary" (onClick)="cancel()" />
+    <p-button label="儲存" icon="pi pi-check" (onClick)="save()" />
+  </div>
+</div>
+
+<form [formGroup]="form">
+  <div class="form-card">
+    <h3>基本資料</h3>
+
+    <div class="grid">
+      <div class="field">
+        <label for="courseId">簡介代碼 <span class="required">*</span></label>
+        <input pInputText id="courseId" formControlName="courseId" maxlength="50" />
+      </div>
+      <div class="field">
+        <label for="prodCourseId">科目代碼 <span class="required">*</span></label>
+        <input pInputText id="prodCourseId" formControlName="prodCourseId" maxlength="50" />
+      </div>
+      <div class="field field--wide">
+        <label for="title">課程名稱 <span class="required">*</span></label>
+        <input pInputText id="title" formControlName="title" maxlength="200" />
+      </div>
+      <div class="field field--wide">
+        <label for="officialTitle">官方課程名稱</label>
+        <input pInputText id="officialTitle" formControlName="officialTitle" maxlength="300" />
+      </div>
+      <div class="field field--wide">
+        <label for="friendlyUrl">友善網址 <span class="required">*</span></label>
+        <input pInputText id="friendlyUrl" formControlName="friendlyUrl" maxlength="100" />
+      </div>
+      <div class="field">
+        <label for="displayOrder">顯示順序 <span class="required">*</span></label>
+        <p-inputNumber inputId="displayOrder" formControlName="displayOrder" [useGrouping]="false" />
+      </div>
+      <div class="field">
+        <label for="partnerPkid">原廠 <span class="required">*</span></label>
+        <p-select inputId="partnerPkid" formControlName="partnerPkid" [options]="partnerOptions" optionLabel="label" optionValue="value" placeholder="請選擇" appendTo="body" [filter]="true" />
+      </div>
+      <div class="field">
+        <label for="courseGroupPkid">課程群組</label>
+        <p-select inputId="courseGroupPkid" formControlName="courseGroupPkid" [options]="courseGroupOptions" optionLabel="label" optionValue="value" placeholder="無" appendTo="body" [filter]="true" [showClear]="true" />
+      </div>
+      <div class="field">
+        <label for="publishStatusPkid">上架狀態 <span class="required">*</span></label>
+        <p-select inputId="publishStatusPkid" formControlName="publishStatusPkid" [options]="publishStatusOptions" optionLabel="label" optionValue="value" placeholder="請選擇" appendTo="body" />
+      </div>
+      <div class="field">
+        <label for="scheduleOn">上架日期 <span class="required">*</span></label>
+        <p-datepicker inputId="scheduleOn" formControlName="scheduleOn" dateFormat="yy/mm/dd" appendTo="body" />
+      </div>
+      <div class="field">
+        <label for="scheduleOff">下架日期 <span class="required">*</span></label>
+        <p-datepicker inputId="scheduleOff" formControlName="scheduleOff" dateFormat="yy/mm/dd" appendTo="body" />
+      </div>
+      <div class="field">
+        <label for="hour">時數 <span class="required">*</span></label>
+        <p-inputNumber inputId="hour" formControlName="hour" [useGrouping]="false" />
+      </div>
+      <div class="field">
+        <label for="listPrice">定價 <span class="required">*</span></label>
+        <p-inputNumber inputId="listPrice" formControlName="listPrice" [useGrouping]="false" />
+      </div>
+      <div class="field">
+        <label for="learningCredit">點數 <span class="required">*</span></label>
+        <p-inputNumber inputId="learningCredit" formControlName="learningCredit" [minFractionDigits]="0" [maxFractionDigits]="1" [useGrouping]="false" />
+      </div>
+      <div class="field field--checkbox">
+        <p-checkbox inputId="canRepeat" formControlName="canRepeat" [binary]="true" />
+        <label for="canRepeat">允許重聽</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3>課程內容</h3>
+
+    <div class="field">
+      <label for="material">教材</label>
+      <textarea pTextarea id="material" formControlName="material" rows="2"></textarea>
+    </div>
+    <div class="field">
+      <label for="objective">課程目標</label>
+      <textarea pTextarea id="objective" formControlName="objective" rows="3"></textarea>
+    </div>
+    <div class="field">
+      <label for="target">適合對象</label>
+      <textarea pTextarea id="target" formControlName="target" rows="2"></textarea>
+    </div>
+    <div class="field">
+      <label for="prerequisites">先備知識</label>
+      <textarea pTextarea id="prerequisites" formControlName="prerequisites" rows="3"></textarea>
+    </div>
+    <div class="field">
+      <label for="outline">課程大綱</label>
+      <textarea pTextarea id="outline" formControlName="outline" rows="4"></textarea>
+    </div>
+    <div class="field">
+      <label for="towardCertOrExam">考試／認證說明</label>
+      <textarea pTextarea id="towardCertOrExam" formControlName="towardCertOrExam" rows="3"></textarea>
+    </div>
+    <div class="field">
+      <label for="note">備註</label>
+      <textarea pTextarea id="note" formControlName="note" rows="2"></textarea>
+    </div>
+    <div class="field">
+      <label for="otherInfo">其他資訊</label>
+      <textarea pTextarea id="otherInfo" formControlName="otherInfo" rows="2"></textarea>
+    </div>
+  </div>
+</form>

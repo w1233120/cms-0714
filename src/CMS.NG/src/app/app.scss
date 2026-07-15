@@ -6,7 +6,11 @@ $border-color: #e9ecef;
 .app-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  // Definite height (not min-height) so .app-content becomes the internal scroll
+  // container: the topbar/sidebar stay fixed and only the content region scrolls,
+  // which is what lets sticky toolbars inside a page actually pin.
+  height: 100vh;
+  height: 100dvh;
 }
 
 .topbar {

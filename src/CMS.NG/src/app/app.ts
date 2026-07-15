@@ -33,6 +33,7 @@ export class App {
       label: '課程管理 Course',
       icon: 'pi pi-book',
       items: [
+        { label: '課程 Course', route: '/courses' },
         { label: '合作廠商 Partner', route: '/partners' },
         { label: '課程群組 CourseGroup', route: '/course-groups' }
       ]

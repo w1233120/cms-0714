@@ -1,0 +1,84 @@
+@if (course) {
+  <div class="form-header">
+    <h2>檢視課程</h2>
+    <div class="form-header__actions">
+      <p-button label="返回" icon="pi pi-arrow-left" severity="secondary" (onClick)="back()" />
+      <p-button label="編輯" icon="pi pi-pencil" (onClick)="edit()" />
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3>基本資料</h3>
+
+    <div class="basic">
+      <div class="basic__fields">
+        <div class="field">
+          <label>主代碼</label>
+          <div class="value">{{ course.pkid }}</div>
+        </div>
+        <div class="field">
+          <label>顯示順序</label>
+          <div class="value">{{ course.displayOrder }}</div>
+        </div>
+        <div class="field">
+          <label>簡介代碼</label>
+          <div class="value">{{ course.courseId }}</div>
+        </div>
+        <div class="field">
+          <label>科目代碼</label>
+          <div class="value">{{ course.prodCourseId }}</div>
+        </div>
+        <div class="field field--wide">
+          <label>課程名稱</label>
+          <div class="value">{{ course.title }}</div>
+        </div>
+        <div class="field field--wide">
+          <label>官方課程名稱</label>
+          <div class="value">{{ course.officialTitle || '—' }}</div>
+        </div>
+        <div class="field">
+          <label>原廠</label>
+          <a class="value link" [routerLink]="['/partners', course.partnerPkid]">{{ course.partnerName }}</a>
+        </div>
+        <div class="field">
+          <label>課程群組</label>
+          @if (course.courseGroupPkid) {
+            <a class="value link" [routerLink]="['/course-groups', course.courseGroupPkid]">{{ course.courseGroupDescription }}</a>
+          } @else {
+            <div class="value">—</div>
+          }
+        </div>
+        <div class="field">
+          <label>上架狀態</label>
+          <a class="value link" [routerLink]="['/publish-statuses', course.publishStatusPkid]">{{ course.publishStatusDescription }}</a>
+        </div>
+        <div class="field">
+          <label>上架 / 下架日期</label>
+          <div class="value">{{ course.scheduleOn }} ~ {{ course.scheduleOff }}</div>
+        </div>
+        <div class="field">
+          <label>時數 / 定價 / 點數</label>
+          <div class="value">{{ course.hour }} 小時 / {{ course.listPrice }} / {{ course.learningCredit }}</div>
+        </div>
+        <div class="field">
+          <label>允許重聽</label>
+          <div class="value">{{ course.canRepeat ? '是' : '否' }}</div>
+        </div>
+      </div>
+
+      <app-course-qr-code [pkid]="course.pkid" [courseId]="course.courseId" />
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3>課程內容</h3>
+    <div class="field"><label>教材</label><div class="value pre">{{ course.material || '—' }}</div></div>
+    <div class="field"><label>課程目標</label><div class="value pre">{{ course.objective || '—' }}</div></div>
+    <div class="field"><label>適合對象</label><div class="value pre">{{ course.target || '—' }}</div></div>
+    <div class="field"><label>先備知識</label><div class="value pre">{{ course.prerequisites || '—' }}</div></div>
+    <div class="field"><label>課程大綱</label><div class="value pre">{{ course.outline || '—' }}</div></div>
+    <div class="field"><label>考試／認證說明</label><div class="value pre">{{ course.towardCertOrExam || '—' }}</div></div>
+    <div class="field"><label>備註</label><div class="value pre">{{ course.note || '—' }}</div></div>
+    <div class="field"><label>其他資訊</label><div class="value pre">{{ course.otherInfo || '—' }}</div></div>
+  </div>
+}
