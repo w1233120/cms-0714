@@ -9,4 +9,6 @@ public interface ILookupRepository
     Task<IEnumerable<PublishStatusLookup>> GetPublishStatusesAsync();
     Task<IEnumerable<PartnerLookup>> GetPartnersAsync();
     Task<IEnumerable<CourseGroupLookup>> GetCourseGroupsAsync();
+    Task<IEnumerable<TrainingCenterLookup>> GetTrainingCentersAsync();
+    Task<IEnumerable<PromotionLookup>> GetPromotionsAsync();
 }

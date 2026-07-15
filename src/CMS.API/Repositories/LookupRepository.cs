@@ -40,4 +40,18 @@ public class LookupRepository(IDbConnectionFactory connectionFactory) : ILookupR
         return await connection.QueryAsync<CourseGroupLookup>(
             "SELECT pkid, Description FROM CourseGroup ORDER BY pkid ASC");
     }
+
+    public async Task<IEnumerable<TrainingCenterLookup>> GetTrainingCentersAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<TrainingCenterLookup>(
+            "SELECT pkid, Name FROM TrainingCenter ORDER BY DisplayOrder ASC");
+    }
+
+    public async Task<IEnumerable<PromotionLookup>> GetPromotionsAsync()
+    {
+        using var connection = connectionFactory.CreateConnection();
+        return await connection.QueryAsync<PromotionLookup>(
+            "SELECT pkid, PromoCode, Topic, Description FROM Promotion2 ORDER BY PromoCode ASC");
+    }
 }

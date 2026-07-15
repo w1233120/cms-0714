@@ -37,4 +37,16 @@ public class LookupsController(ILookupRepository repository) : ControllerBase
     {
         return Ok(await repository.GetCourseGroupsAsync());
     }
+
+    [HttpGet("training-centers")]
+    public async Task<ActionResult<IEnumerable<TrainingCenterLookup>>> GetTrainingCenters()
+    {
+        return Ok(await repository.GetTrainingCentersAsync());
+    }
+
+    [HttpGet("promotions")]
+    public async Task<ActionResult<IEnumerable<PromotionLookup>>> GetPromotions()
+    {
+        return Ok(await repository.GetPromotionsAsync());
+    }
 }

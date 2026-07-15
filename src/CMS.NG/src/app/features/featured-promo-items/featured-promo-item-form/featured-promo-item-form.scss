@@ -1,0 +1,33 @@
+.promo-form {
+  border: 2px solid #111;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 60rem;
+
+  &__row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__label {
+    font-weight: 600;
+  }
+
+  &__control {
+    width: 100%;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 2rem;
+    padding-top: 0.25rem;
+  }
+}
+
+:host ::ng-deep .promo-form__control input {
+  width: 100%;
+}

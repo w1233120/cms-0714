@@ -1,0 +1,33 @@
+<form class="promo-form" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="promo-form__row">
+    <label class="promo-form__label" for="promoCode">PromoCode:</label>
+    <p-autoComplete
+      inputId="promoCode"
+      [(ngModel)]="selectedPromo"
+      [ngModelOptions]="{ standalone: true }"
+      [suggestions]="filteredPromotions"
+      optionLabel="promoCode"
+      [forceSelection]="true"
+      [dropdown]="true"
+      appendTo="body"
+      styleClass="promo-form__control"
+      (completeMethod)="filterPromotions($event)"
+      (onSelect)="onPromotionSelect($event.value)"
+    />
+  </div>
+
+  <div class="promo-form__row">
+    <label class="promo-form__label" for="topic">Topic:</label>
+    <input id="topic" pInputText class="promo-form__control" formControlName="topic" />
+  </div>
+
+  <div class="promo-form__row">
+    <label class="promo-form__label" for="description">Description:</label>
+    <input id="description" pInputText class="promo-form__control" formControlName="description" />
+  </div>
+
+  <div class="promo-form__actions">
+    <p-button type="submit" label="Save" [text]="true" [disabled]="form.invalid" />
+    <p-button type="button" label="Cancel" [text]="true" (onClick)="cancel()" />
+  </div>
+</form>

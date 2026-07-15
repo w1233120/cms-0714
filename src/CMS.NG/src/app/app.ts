@@ -36,6 +36,11 @@ export class App {
         { label: '合作廠商 Partner', route: '/partners' },
         { label: '課程群組 CourseGroup', route: '/course-groups' }
       ]
+    },
+    {
+      label: '首頁 Home',
+      icon: 'pi pi-home',
+      items: [{ label: '上稿作業 FeaturedPromoItem', route: '/featured-promo-items' }]
     }
   ];
 

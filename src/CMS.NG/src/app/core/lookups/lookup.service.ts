@@ -7,7 +7,9 @@ import {
   AppUserLookup,
   CourseGroupLookup,
   PartnerLookup,
-  PublishStatusLookup
+  PromotionLookup,
+  PublishStatusLookup,
+  TrainingCenterLookup
 } from './lookup.model';
 
 @Injectable({ providedIn: 'root' })
@@ -33,5 +35,13 @@ export class LookupService {
 
   getCourseGroups(): Observable<CourseGroupLookup[]> {
     return this.http.get<CourseGroupLookup[]>(`${this.baseUrl}/course-groups`);
+  }
+
+  getTrainingCenters(): Observable<TrainingCenterLookup[]> {
+    return this.http.get<TrainingCenterLookup[]>(`${this.baseUrl}/training-centers`);
+  }
+
+  getPromotions(): Observable<PromotionLookup[]> {
+    return this.http.get<PromotionLookup[]>(`${this.baseUrl}/promotions`);
   }
 }

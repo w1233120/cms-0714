@@ -1,0 +1,88 @@
+<p-toast />
+<p-confirmDialog />
+
+<div class="promo-page">
+  <!-- Training center tabs — label = Name, value = pkid -->
+  <div class="promo-tabs">
+    @for (center of trainingCenters; track center.pkid) {
+      <button
+        type="button"
+        class="promo-tab"
+        [class.promo-tab--active]="center.pkid === activeTrainingCenterPkid"
+        (click)="selectTab(center.pkid)"
+      >
+        {{ center.name }}
+      </button>
+    }
+  </div>
+
+  <!-- One-week (Mon–Sun) navigator -->
+  <div class="promo-week">
+    <button type="button" class="promo-week__nav" (click)="prevWeek()" aria-label="上一週">&lt;&lt;--</button>
+    <span class="promo-week__label">{{ weekLabel }}</span>
+    <button type="button" class="promo-week__nav" (click)="nextWeek()" aria-label="下一週">--&gt;&gt;</button>
+  </div>
+
+  @for (row of rows; track row.scheduleOn) {
+    <div class="promo-day">
+      <div class="promo-day__header">{{ row.label }}</div>
+
+      @for (cell of row.cells; track cell.slot) {
+        <div class="promo-slot">
+          @if (isEditing(row.scheduleOn, cell.slot)) {
+            <app-featured-promo-item-form
+              [item]="editingItem"
+              [scheduleOn]="row.scheduleOn"
+              [trainingCenterPkid]="activeTrainingCenterPkid"
+              [slot]="cell.slot"
+              [promotions]="promotions"
+              (save)="onSave($event)"
+              (cancelForm)="closeEditor()"
+            />
+          } @else {
+            <span class="promo-slot__num">{{ cell.slot }}</span>
+
+            <button
+              type="button"
+              class="promo-link"
+              [disabled]="!cell.item"
+              (click)="cell.item && moveSlot(row, cell.item, 1)"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              class="promo-link"
+              [disabled]="!cell.item"
+              (click)="cell.item && moveSlot(row, cell.item, -1)"
+            >
+              --
+            </button>
+
+            <button type="button" class="promo-link" (click)="startEdit(row.scheduleOn, cell.slot, cell.item)">
+              Edit
+            </button>
+
+            @if (cell.item) {
+              <button type="button" class="promo-link" (click)="copy(cell.item)">Copy</button>
+              <button type="button" class="promo-link" (click)="remove(cell.item)">Delete</button>
+
+              <input class="promo-field" type="text" [value]="cell.item.promoCode" readonly />
+              <input class="promo-field" type="text" [value]="cell.item.topic" readonly />
+              <input class="promo-field promo-field--wide" type="text" [value]="cell.item.description" readonly />
+            } @else {
+              <button
+                type="button"
+                class="promo-link"
+                [disabled]="!clipboard"
+                (click)="paste(row.scheduleOn, cell.slot)"
+              >
+                Paste
+              </button>
+            }
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -22,3 +22,15 @@ export interface CourseGroupLookup {
   pkid: number;
   description: string;
 }
+
+export interface TrainingCenterLookup {
+  pkid: number;
+  name: string;
+}
+
+export interface PromotionLookup {
+  pkid: number;
+  promoCode: string;
+  topic: string;
+  description: string;
+}
