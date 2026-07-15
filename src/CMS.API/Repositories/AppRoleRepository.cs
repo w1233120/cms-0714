@@ -1,11 +1,15 @@
+using System.Data;
 using CMS.API.Data;
 using CMS.API.Models;
+using CMS.API.Services;
 using Dapper;
 
 namespace CMS.API.Repositories;
 
-public class AppRoleRepository(IDbConnectionFactory connectionFactory) : IAppRoleRepository
+public class AppRoleRepository(IDbConnectionFactory connectionFactory, IRowAuditWriter auditWriter) : IAppRoleRepository
 {
+    private const string TableName = "AppRole";
+
     private const string SelectColumns = """
         SELECT r.pkid, r.RoleId, r.RoleName, r.PermissionLevel, r.Description,
                (SELECT COUNT(*) FROM AppUserRole ur WHERE ur.RoleId = r.RoleId) AS UserCount
@@ -72,52 +76,84 @@ public class AppRoleRepository(IDbConnectionFactory connectionFactory) : IAppRol
     public async Task CreateAsync(AppRoleRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
         await connection.ExecuteAsync("""
             INSERT INTO AppRole (RoleId, RoleName, PermissionLevel, Description)
             VALUES (@RoleId, @RoleName, @PermissionLevel, @Description)
-            """, request);
+            """, request, transaction);
 
-        await SyncUsersAsync(connection, request.RoleId, request.UserIds);
+        await SyncUsersAsync(connection, transaction, request.RoleId, request.UserIds);
+
+        var created = await LoadAsync(connection, transaction, request.RoleId);
+        await auditWriter.LogInsertAsync(connection, transaction, TableName, created!);
+
+        transaction.Commit();
     }
 
     public async Task<bool> UpdateAsync(AppRoleRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        var rowsAffected = await connection.ExecuteAsync("""
-            UPDATE AppRole SET RoleName = @RoleName, PermissionLevel = @PermissionLevel, Description = @Description
-            WHERE RoleId = @RoleId
-            """, request);
-
-        if (rowsAffected == 0)
+        var before = await LoadAsync(connection, transaction, request.RoleId);
+        if (before is null)
         {
+            transaction.Rollback();
             return false;
         }
 
-        await SyncUsersAsync(connection, request.RoleId, request.UserIds);
+        await connection.ExecuteAsync("""
+            UPDATE AppRole SET RoleName = @RoleName, PermissionLevel = @PermissionLevel, Description = @Description
+            WHERE RoleId = @RoleId
+            """, request, transaction);
+
+        await SyncUsersAsync(connection, transaction, request.RoleId, request.UserIds);
+
+        var after = await LoadAsync(connection, transaction, request.RoleId);
+        await auditWriter.LogUpdateAsync(connection, transaction, TableName, before, after!);
+
+        transaction.Commit();
         return true;
     }
 
     public async Task<bool> DeleteAsync(string roleId)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        await connection.ExecuteAsync("DELETE FROM AppUserRole WHERE RoleId = @RoleId", new { RoleId = roleId });
-        var rowsAffected = await connection.ExecuteAsync("DELETE FROM AppRole WHERE RoleId = @RoleId", new { RoleId = roleId });
+        var before = await LoadAsync(connection, transaction, roleId);
+        if (before is null)
+        {
+            transaction.Rollback();
+            return false;
+        }
 
-        return rowsAffected > 0;
+        await connection.ExecuteAsync("DELETE FROM AppUserRole WHERE RoleId = @RoleId", new { RoleId = roleId }, transaction);
+        await connection.ExecuteAsync("DELETE FROM AppRole WHERE RoleId = @RoleId", new { RoleId = roleId }, transaction);
+
+        await auditWriter.LogDeleteAsync(connection, transaction, TableName, before);
+
+        transaction.Commit();
+        return true;
     }
 
-    private static async Task SyncUsersAsync(System.Data.IDbConnection connection, string roleId, List<string> userIds)
+    private static async Task<AppRole?> LoadAsync(IDbConnection connection, IDbTransaction transaction, string roleId) =>
+        await connection.QuerySingleOrDefaultAsync<AppRole>(
+            $"{SelectColumns} WHERE r.RoleId = @RoleId", new { RoleId = roleId }, transaction);
+
+    private static async Task SyncUsersAsync(IDbConnection connection, IDbTransaction transaction, string roleId, List<string> userIds)
     {
-        await connection.ExecuteAsync("DELETE FROM AppUserRole WHERE RoleId = @RoleId", new { RoleId = roleId });
+        await connection.ExecuteAsync("DELETE FROM AppUserRole WHERE RoleId = @RoleId", new { RoleId = roleId }, transaction);
 
         if (userIds.Count > 0)
         {
             var rows = userIds.Select(userId => new { UserId = userId, RoleId = roleId });
             await connection.ExecuteAsync(
-                "INSERT INTO AppUserRole (UserId, RoleId) VALUES (@UserId, @RoleId)", rows);
+                "INSERT INTO AppUserRole (UserId, RoleId) VALUES (@UserId, @RoleId)", rows, transaction);
         }
     }
 }

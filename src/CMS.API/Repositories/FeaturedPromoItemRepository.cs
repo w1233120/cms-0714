@@ -1,11 +1,15 @@
+using System.Data;
 using CMS.API.Data;
 using CMS.API.Models;
+using CMS.API.Services;
 using Dapper;
 
 namespace CMS.API.Repositories;
 
-public class FeaturedPromoItemRepository(IDbConnectionFactory connectionFactory) : IFeaturedPromoItemRepository
+public class FeaturedPromoItemRepository(IDbConnectionFactory connectionFactory, IRowAuditWriter auditWriter) : IFeaturedPromoItemRepository
 {
+    private const string TableName = "FeaturedPromoItem";
+
     // PromoCode is joined from Promotion2 so the grid can show it in place of Promotion_pkid.
     private const string SelectColumns = """
         SELECT f.pkid, f.ScheduleOn, f.TrainingCenter_pkid AS TrainingCenterPkid, f.Slot,
@@ -73,26 +77,47 @@ public class FeaturedPromoItemRepository(IDbConnectionFactory connectionFactory)
     public async Task<int> CreateAsync(FeaturedPromoItemRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        return await connection.ExecuteScalarAsync<int>("""
+        var pkid = await connection.ExecuteScalarAsync<int>("""
             INSERT INTO FeaturedPromoItem (ScheduleOn, TrainingCenter_pkid, Slot, Promotion_pkid, Topic, Description)
             VALUES (@ScheduleOn, @TrainingCenterPkid, @Slot, @PromotionPkid, @Topic, @Description);
             SELECT CAST(SCOPE_IDENTITY() AS int);
-            """, request);
+            """, request, transaction);
+
+        var created = await LoadAsync(connection, transaction, pkid);
+        await auditWriter.LogInsertAsync(connection, transaction, TableName, created!);
+
+        transaction.Commit();
+        return pkid;
     }
 
     public async Task<bool> UpdateAsync(FeaturedPromoItemRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        var rowsAffected = await connection.ExecuteAsync("""
+        var before = await LoadAsync(connection, transaction, request.Pkid);
+        if (before is null)
+        {
+            transaction.Rollback();
+            return false;
+        }
+
+        await connection.ExecuteAsync("""
             UPDATE FeaturedPromoItem
             SET ScheduleOn = @ScheduleOn, TrainingCenter_pkid = @TrainingCenterPkid, Slot = @Slot,
                 Promotion_pkid = @PromotionPkid, Topic = @Topic, Description = @Description
             WHERE pkid = @Pkid
-            """, request);
+            """, request, transaction);
 
-        return rowsAffected > 0;
+        var after = await LoadAsync(connection, transaction, request.Pkid);
+        await auditWriter.LogUpdateAsync(connection, transaction, TableName, before, after!);
+
+        transaction.Commit();
+        return true;
     }
 
     // Swaps the Slot values of two rows in one transaction. A temporary Slot = 0 sidesteps the
@@ -130,9 +155,26 @@ public class FeaturedPromoItemRepository(IDbConnectionFactory connectionFactory)
     public async Task<bool> DeleteAsync(int pkid)
     {
         using var connection = connectionFactory.CreateConnection();
-        var rowsAffected = await connection.ExecuteAsync(
-            "DELETE FROM FeaturedPromoItem WHERE pkid = @Pkid", new { Pkid = pkid });
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        return rowsAffected > 0;
+        var before = await LoadAsync(connection, transaction, pkid);
+        if (before is null)
+        {
+            transaction.Rollback();
+            return false;
+        }
+
+        await connection.ExecuteAsync(
+            "DELETE FROM FeaturedPromoItem WHERE pkid = @Pkid", new { Pkid = pkid }, transaction);
+
+        await auditWriter.LogDeleteAsync(connection, transaction, TableName, before);
+
+        transaction.Commit();
+        return true;
     }
+
+    private static async Task<FeaturedPromoItem?> LoadAsync(IDbConnection connection, IDbTransaction transaction, int pkid) =>
+        await connection.QuerySingleOrDefaultAsync<FeaturedPromoItem>(
+            $"{SelectColumns} WHERE f.pkid = @Pkid", new { Pkid = pkid }, transaction);
 }

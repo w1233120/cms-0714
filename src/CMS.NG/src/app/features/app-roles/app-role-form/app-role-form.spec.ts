@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { RowAuditService } from '../../../core/row-audit/row-audit.service';
 
 import { AppRoleForm } from './app-role-form';
 import { AppRoleService } from '../app-role.service';
@@ -34,6 +35,7 @@ describe('AppRoleForm', () => {
       imports: [AppRoleForm],
       providers: [
         provideRouter([]),
+        { provide: RowAuditService, useValue: { getForRecord: () => of([]) } },
         { provide: AppRoleService, useValue: appRoleServiceSpy },
         { provide: LookupService, useValue: lookupServiceSpy },
         {

@@ -20,6 +20,7 @@ import {
   PublishStatusLookup
 } from '../../../core/lookups/lookup.model';
 import { toIsoDate, parseIsoDate } from '../date.util';
+import { RowAuditBadge } from '../../../core/row-audit/row-audit-badge';
 
 @Component({
   selector: 'app-course-form',
@@ -32,7 +33,8 @@ import { toIsoDate, parseIsoDate } from '../date.util';
     SelectModule,
     DatePickerModule,
     CheckboxModule,
-    ToastModule
+    ToastModule,
+    RowAuditBadge
   ],
   providers: [MessageService],
   templateUrl: './course-form.html',

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { RowAuditService } from '../../../core/row-audit/row-audit.service';
 
 import { PartnerForm } from './partner-form';
 import { PartnerService } from '../partner.service';
@@ -29,6 +30,7 @@ describe('PartnerForm', () => {
       imports: [PartnerForm],
       providers: [
         provideRouter([]),
+        { provide: RowAuditService, useValue: { getForRecord: () => of([]) } },
         { provide: PartnerService, useValue: partnerServiceSpy },
         {
           provide: ActivatedRoute,

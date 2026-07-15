@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ToastModule } from 'primeng/toast';
 import { AuthService } from './core/auth/auth.service';
 
 interface NavItem {
@@ -16,7 +17,7 @@ interface NavGroup {
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastModule],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

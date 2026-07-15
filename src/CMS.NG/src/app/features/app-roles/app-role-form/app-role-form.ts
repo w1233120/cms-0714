@@ -13,10 +13,11 @@ import { AppRoleService } from '../app-role.service';
 import { AppRoleRequest } from '../app-role.model';
 import { LookupService } from '../../../core/lookups/lookup.service';
 import { AppUserLookup } from '../../../core/lookups/lookup.model';
+import { RowAuditBadge } from '../../../core/row-audit/row-audit-badge';
 
 @Component({
   selector: 'app-app-role-form',
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, InputNumberModule, MultiSelectModule, ToastModule],
+  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, InputNumberModule, MultiSelectModule, ToastModule, RowAuditBadge],
   providers: [MessageService],
   templateUrl: './app-role-form.html',
   styleUrl: './app-role-form.scss'
@@ -31,6 +32,9 @@ export class AppRoleForm implements OnInit {
 
   isEdit = false;
   roleId: string | null = null;
+  // The record's numeric pkid (the value RowAudit is keyed by), captured on load for the
+  // audit-history badge. The role itself is addressed by roleId elsewhere.
+  pkid: number | null = null;
   users: AppUserLookup[] = [];
 
   readonly form = this.fb.nonNullable.group({
@@ -56,6 +60,7 @@ export class AppRoleForm implements OnInit {
       this.users = users;
 
       if (role) {
+        this.pkid = role.pkid;
         this.form.patchValue({
           roleId: role.roleId,
           roleName: role.roleName,

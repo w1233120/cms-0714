@@ -4,12 +4,15 @@ using System.Text;
 using System.Text.Json;
 using CMS.API.Data;
 using CMS.API.Models;
+using CMS.API.Services;
 using Dapper;
 
 namespace CMS.API.Repositories;
 
-public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUserRepository
+public class AppUserRepository(IDbConnectionFactory connectionFactory, IRowAuditWriter auditWriter) : IAppUserRepository
 {
+    private const string TableName = "AppUser";
+
     // PasswordHash is never selected — it must not reach the API surface.
     private const string SelectColumns = """
         SELECT u.pkid, u.UserId, u.UserName, u.IsActive, u.PasswordUpdatedTime,
@@ -90,45 +93,73 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
     public async Task CreateAsync(AppUserRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        var passwordHash = await GetDefaultPasswordHashAsync(connection);
+        var passwordHash = await GetDefaultPasswordHashAsync(connection, transaction);
 
         await connection.ExecuteAsync("""
             INSERT INTO AppUser (UserId, UserName, IsActive, PasswordHash, PasswordUpdatedTime)
             VALUES (@UserId, @UserName, @IsActive, @PasswordHash, NULL)
             """,
-            new { request.UserId, request.UserName, request.IsActive, PasswordHash = passwordHash });
+            new { request.UserId, request.UserName, request.IsActive, PasswordHash = passwordHash }, transaction);
 
-        await SyncRolesAsync(connection, request.UserId, request.RoleIds);
+        await SyncRolesAsync(connection, transaction, request.UserId, request.RoleIds);
+
+        var created = await LoadAsync(connection, transaction, request.UserId);
+        await auditWriter.LogInsertAsync(connection, transaction, TableName, created!);
+
+        transaction.Commit();
     }
 
     public async Task<bool> UpdateAsync(AppUserRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        // PasswordHash and PasswordUpdatedTime are never touched here.
-        var rowsAffected = await connection.ExecuteAsync("""
-            UPDATE AppUser SET UserName = @UserName, IsActive = @IsActive
-            WHERE UserId = @UserId
-            """, new { request.UserId, request.UserName, request.IsActive });
-
-        if (rowsAffected == 0)
+        var before = await LoadAsync(connection, transaction, request.UserId);
+        if (before is null)
         {
+            transaction.Rollback();
             return false;
         }
 
-        await SyncRolesAsync(connection, request.UserId, request.RoleIds);
+        // PasswordHash and PasswordUpdatedTime are never touched here.
+        await connection.ExecuteAsync("""
+            UPDATE AppUser SET UserName = @UserName, IsActive = @IsActive
+            WHERE UserId = @UserId
+            """, new { request.UserId, request.UserName, request.IsActive }, transaction);
+
+        await SyncRolesAsync(connection, transaction, request.UserId, request.RoleIds);
+
+        var after = await LoadAsync(connection, transaction, request.UserId);
+        await auditWriter.LogUpdateAsync(connection, transaction, TableName, before, after!);
+
+        transaction.Commit();
         return true;
     }
 
     public async Task<bool> DeleteAsync(string userId)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        await connection.ExecuteAsync("DELETE FROM AppUserRole WHERE UserId = @UserId", new { UserId = userId });
-        var rowsAffected = await connection.ExecuteAsync("DELETE FROM AppUser WHERE UserId = @UserId", new { UserId = userId });
+        var before = await LoadAsync(connection, transaction, userId);
+        if (before is null)
+        {
+            transaction.Rollback();
+            return false;
+        }
 
-        return rowsAffected > 0;
+        await connection.ExecuteAsync("DELETE FROM AppUserRole WHERE UserId = @UserId", new { UserId = userId }, transaction);
+        await connection.ExecuteAsync("DELETE FROM AppUser WHERE UserId = @UserId", new { UserId = userId }, transaction);
+
+        await auditWriter.LogDeleteAsync(connection, transaction, TableName, before);
+
+        transaction.Commit();
+        return true;
     }
 
     // Restores the default password hash and stamps the change time (an admin reset counts
@@ -138,34 +169,54 @@ public class AppUserRepository(IDbConnectionFactory connectionFactory) : IAppUse
         WHERE UserId = @UserId
         """;
 
+    // A reset is a mutation like any other, so it is audited as an Update. PasswordHash is not
+    // on the read model (it never leaves the backend), so the audited change is the stamped
+    // PasswordUpdatedTime — enough to show that the password was reset, without exposing the hash.
     public async Task<bool> ResetPasswordAsync(string userId)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        var passwordHash = await GetDefaultPasswordHashAsync(connection);
+        var before = await LoadAsync(connection, transaction, userId);
+        if (before is null)
+        {
+            transaction.Rollback();
+            return false;
+        }
 
-        var rowsAffected = await connection.ExecuteAsync(
-            ResetPasswordSql, new { UserId = userId, PasswordHash = passwordHash });
+        var passwordHash = await GetDefaultPasswordHashAsync(connection, transaction);
 
-        return rowsAffected > 0;
+        await connection.ExecuteAsync(
+            ResetPasswordSql, new { UserId = userId, PasswordHash = passwordHash }, transaction);
+
+        var after = await LoadAsync(connection, transaction, userId);
+        await auditWriter.LogUpdateAsync(connection, transaction, TableName, before, after!);
+
+        transaction.Commit();
+        return true;
     }
 
-    private static async Task SyncRolesAsync(IDbConnection connection, string userId, List<string> roleIds)
+    private static async Task<AppUser?> LoadAsync(IDbConnection connection, IDbTransaction transaction, string userId) =>
+        await connection.QuerySingleOrDefaultAsync<AppUser>(
+            $"{SelectColumns} WHERE u.UserId = @UserId", new { UserId = userId }, transaction);
+
+    private static async Task SyncRolesAsync(IDbConnection connection, IDbTransaction transaction, string userId, List<string> roleIds)
     {
-        await connection.ExecuteAsync("DELETE FROM AppUserRole WHERE UserId = @UserId", new { UserId = userId });
+        await connection.ExecuteAsync("DELETE FROM AppUserRole WHERE UserId = @UserId", new { UserId = userId }, transaction);
 
         if (roleIds.Count > 0)
         {
             var rows = roleIds.Select(roleId => new { UserId = userId, RoleId = roleId });
             await connection.ExecuteAsync(
-                "INSERT INTO AppUserRole (UserId, RoleId) VALUES (@UserId, @RoleId)", rows);
+                "INSERT INTO AppUserRole (UserId, RoleId) VALUES (@UserId, @RoleId)", rows, transaction);
         }
     }
 
-    private static async Task<string> GetDefaultPasswordHashAsync(IDbConnection connection)
+    private static async Task<string> GetDefaultPasswordHashAsync(IDbConnection connection, IDbTransaction? transaction = null)
     {
         var configValue = await connection.ExecuteScalarAsync<string?>(
-            "SELECT configValue FROM SysConfig WHERE configKey = 'appConfig'");
+            "SELECT configValue FROM SysConfig WHERE configKey = 'appConfig'", transaction: transaction);
 
         return HashDefaultPassword(configValue);
     }

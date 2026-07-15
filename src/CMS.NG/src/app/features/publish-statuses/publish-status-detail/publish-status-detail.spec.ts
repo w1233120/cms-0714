@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { RowAuditService } from '../../../core/row-audit/row-audit.service';
 
 import { PublishStatusDetail } from './publish-status-detail';
 import { PublishStatusService } from '../publish-status.service';
@@ -27,6 +28,7 @@ describe('PublishStatusDetail', () => {
       imports: [PublishStatusDetail],
       providers: [
         provideRouter([]),
+        { provide: RowAuditService, useValue: { getForRecord: () => of([]) } },
         { provide: PublishStatusService, useValue: publishStatusServiceSpy },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '1' } } } }
       ]

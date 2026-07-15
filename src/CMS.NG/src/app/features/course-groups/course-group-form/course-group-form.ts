@@ -7,10 +7,11 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { CourseGroupService } from '../course-group.service';
 import { CourseGroupRequest } from '../course-group.model';
+import { RowAuditBadge } from '../../../core/row-audit/row-audit-badge';
 
 @Component({
   selector: 'app-course-group-form',
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, ToastModule],
+  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, ToastModule, RowAuditBadge],
   providers: [MessageService],
   templateUrl: './course-group-form.html',
   styleUrl: './course-group-form.scss'

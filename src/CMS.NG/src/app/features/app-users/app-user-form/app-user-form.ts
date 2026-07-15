@@ -15,6 +15,7 @@ import { AppUserRequest } from '../app-user.model';
 import { LookupService } from '../../../core/lookups/lookup.service';
 import { AppRoleLookup } from '../../../core/lookups/lookup.model';
 import { AuthService } from '../../../core/auth/auth.service';
+import { RowAuditBadge } from '../../../core/row-audit/row-audit-badge';
 
 @Component({
   selector: 'app-app-user-form',
@@ -25,7 +26,8 @@ import { AuthService } from '../../../core/auth/auth.service';
     CheckboxModule,
     MultiSelectModule,
     ToastModule,
-    ConfirmDialogModule
+    ConfirmDialogModule,
+    RowAuditBadge
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './app-user-form.html',
@@ -44,6 +46,9 @@ export class AppUserForm implements OnInit {
 
   isEdit = false;
   userId: string | null = null;
+  // The record's numeric pkid (the value RowAudit is keyed by), captured on load for the
+  // audit-history badge. The user itself is addressed by userId elsewhere.
+  pkid: number | null = null;
   roles: AppRoleLookup[] = [];
 
   // No password control: the backend seeds PasswordHash from SysConfig on create
@@ -70,6 +75,7 @@ export class AppUserForm implements OnInit {
       this.roles = roles;
 
       if (user) {
+        this.pkid = user.pkid;
         this.form.patchValue({
           userId: user.userId,
           userName: user.userName,

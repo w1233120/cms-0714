@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WritableSignal, signal } from '@angular/core';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { RowAuditService } from '../../../core/row-audit/row-audit.service';
 import { ConfirmationService } from 'primeng/api';
 
 import { AppUserForm } from './app-user-form';
@@ -42,6 +43,7 @@ describe('AppUserForm', () => {
       imports: [AppUserForm],
       providers: [
         provideRouter([]),
+        { provide: RowAuditService, useValue: { getForRecord: () => of([]) } },
         { provide: AppUserService, useValue: appUserServiceSpy },
         { provide: LookupService, useValue: lookupServiceSpy },
         { provide: AuthService, useValue: authStub },

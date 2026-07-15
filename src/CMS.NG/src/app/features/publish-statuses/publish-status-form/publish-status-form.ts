@@ -10,10 +10,11 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { PublishStatusService } from '../publish-status.service';
 import { PublishStatusRequest } from '../publish-status.model';
+import { RowAuditBadge } from '../../../core/row-audit/row-audit-badge';
 
 @Component({
   selector: 'app-publish-status-form',
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, InputNumberModule, CheckboxModule, ToastModule],
+  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, InputNumberModule, CheckboxModule, ToastModule, RowAuditBadge],
   providers: [MessageService],
   templateUrl: './publish-status-form.html',
   styleUrl: './publish-status-form.scss'

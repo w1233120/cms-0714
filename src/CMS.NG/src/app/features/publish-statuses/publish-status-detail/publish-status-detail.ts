@@ -3,10 +3,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { PublishStatusService } from '../publish-status.service';
 import { PublishStatus } from '../publish-status.model';
+import { RowAuditBadge } from '../../../core/row-audit/row-audit-badge';
 
 @Component({
   selector: 'app-publish-status-detail',
-  imports: [ButtonModule],
+  imports: [ButtonModule, RowAuditBadge],
   templateUrl: './publish-status-detail.html',
   styleUrl: './publish-status-detail.scss'
 })

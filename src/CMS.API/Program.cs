@@ -1,5 +1,6 @@
 using System.Text;
 using CMS.API.Data;
+using CMS.API.Middleware;
 using CMS.API.Repositories;
 using CMS.API.Services;
 using Dapper;
@@ -40,8 +41,13 @@ builder.Services.AddScoped<IFeaturedPromoItemRepository, FeaturedPromoItemReposi
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<ILookupRepository, LookupRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IRowAuditRepository, RowAuditRepository>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddSingleton<ISigningKeyProvider, SigningKeyProvider>();
+
+// Reads the current request's JWT to stamp the acting user on each audit row.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IRowAuditWriter, RowAuditWriter>();
 
 // Bearer authentication. The signing key comes from SysConfig (the same secret the
 // AuthController issues tokens with); tokens carry no issuer/audience, so validate
@@ -74,6 +80,10 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+// Outermost middleware: turn any unhandled exception into one safe 500 JSON response and
+// log the full detail server-side. Registered first so it wraps the whole pipeline.
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

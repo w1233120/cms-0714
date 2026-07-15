@@ -3,6 +3,9 @@
 <div class="form-header">
   <h2>{{ isEdit ? '編輯課程' : '新增課程' }}</h2>
   <div class="form-header__actions">
+    @if (isEdit && pkid) {
+      <app-row-audit-badge tableName="Course" [pkid]="pkid" />
+    }
     <p-button label="取消" icon="pi pi-times" severity="secondary" (onClick)="cancel()" />
     <p-button label="儲存" icon="pi pi-check" (onClick)="save()" />
   </div>

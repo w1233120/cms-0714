@@ -4,10 +4,11 @@ import { ButtonModule } from 'primeng/button';
 import { CourseService } from '../course.service';
 import { Course } from '../course.model';
 import { CourseQrCode } from '../course-qr-code/course-qr-code';
+import { RowAuditBadge } from '../../../core/row-audit/row-audit-badge';
 
 @Component({
   selector: 'app-course-detail',
-  imports: [RouterLink, ButtonModule, CourseQrCode],
+  imports: [RouterLink, ButtonModule, CourseQrCode, RowAuditBadge],
   templateUrl: './course-detail.html',
   styleUrl: './course-detail.scss'
 })

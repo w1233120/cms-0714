@@ -54,6 +54,16 @@ Numeric PKs interpolate directly.
 Read-only cards mirroring the form, plus any special actions (e.g. the 重設密碼 button on
 `app-user-detail`, behind a `ConfirmationService` dialog, reloading on success).
 
+## Row-audit badge
+
+`core/row-audit/` holds the reusable standalone `RowAuditBadge` (inputs: `tableName`, `pkid`). Place
+it in the toolbar `#start` slot of **every** detail page and form page (`#start` of the `.form-header`
+actions — there is no `p-toolbar`). It shows the latest change inline and opens the full trail in a
+`p-dialog` on click, via `GET /api/rowaudit?tableName=&pkid=`. Pass the **numeric `pkid`** even for the
+string-keyed `AppRole`/`AppUser` (their forms capture `pkid` on load just for the badge). Exempt:
+`FeaturedPromoItem` has no badge (inline row-editor, no detail page). See
+[backend](backend-conventions.md#row-audit).
+
 ## Datetime display
 
 Dapper returns `datetime` with `Kind = Unspecified`, so the JSON has no timezone suffix. Append
@@ -102,8 +112,11 @@ the "系統管理 Admin" group is hidden from non-admins.
   (`http://schemas.microsoft.com/ws/2008/06/identity/claims/role`), which the backend emits verbatim
   (it is *not* shortened to `role`). `logout()` / `clearSession()` drop the profile.
 - **`authInterceptor`** (registered via `provideHttpClient(withInterceptors([...]))`) — attaches
-  `Authorization: Bearer <token>` to requests whose URL starts with `environment.apiUrl`, and on any
-  `401` calls `clearSession()` + redirects to `/login`.
+  `Authorization: Bearer <token>` to requests whose URL starts with `environment.apiUrl`, and
+  centralises HTTP error handling: on `401` it calls `clearSession()` + redirects to `/login`; on
+  `status >= 500` it toasts the server's safe `error.error.message` (see
+  [Exception handling](#exception-handling)); everything else (400/403/404) is re-thrown untouched so
+  forms handle it. It always re-throws so callers' `error` handlers still run.
 - **`authGuard`** (`CanActivateFn`) — guards every feature route; returns a `/login` `UrlTree` when
   `!isAuthenticated()`. The `login` route itself is unguarded.
 - **App shell** (`app.ts`/`app.html`) renders the topbar/sidebar chrome **only when authenticated**;
@@ -130,6 +143,30 @@ is one page with two independent forms:
 each wrapped in `@if (auth.isAdmin())`, and calls `AppUserService.resetPassword(userId)` →
 `POST /api/appusers/{id}/reset-password`. The client sends **only** the `UserId` and receives no
 body — hiding the button is convenience; the backend `[Authorize(Roles = "Admin")]` is the real gate.
+
+## Exception handling
+
+The `authInterceptor` (see [Auth / login](#auth--login)) is also where a server-side failure becomes
+a user-visible message. On a `500`-class response (`status >= 500`) it shows an error toast using the
+body's safe `{ message }` — the same generic string the backend's `ExceptionHandlingMiddleware`
+emits — falling back to a bilingual default when the body has none. It never shows a raw stack trace
+or SQL; the backend guarantees the body carries only the safe message. Other statuses keep their
+existing behaviour: `401` clears the session + redirects to `/login`; `400`/`403`/`404` are re-thrown
+so the originating form/component handles them.
+
+The toast plumbing is a deliberate two-part setup:
+
+- **A root `MessageService`** is provided in `app.config.ts`, and the app-wide `<p-toast />` lives in
+  `App` (`app.ts`/`app.html`). The interceptor injects that root instance, so a toast raised from an
+  interceptor (which has no component of its own) has somewhere to render.
+- **Per-feature components keep their own component-scoped `MessageService`** (`providers:
+  [MessageService]`) and their own `<p-toast>` for local success/error messages. Those instances are
+  separate streams from the root one, so the two never cross-talk. A `TestBed` that renders `App`
+  (or the interceptor) must therefore provide `MessageService`.
+
+`auth.interceptor.spec.ts` covers all three paths: a `500` with a message toasts that exact detail
+(and does **not** redirect), a `500` with no message toasts the generic fallback, and a `400` neither
+toasts nor redirects. The `401`→redirect case stays as before.
 
 ## Tests
 

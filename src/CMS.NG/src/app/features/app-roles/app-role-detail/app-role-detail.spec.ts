@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { RowAuditService } from '../../../core/row-audit/row-audit.service';
 
 import { AppRoleDetail } from './app-role-detail';
 import { AppRoleService } from '../app-role.service';
@@ -32,6 +33,7 @@ describe('AppRoleDetail', () => {
       imports: [AppRoleDetail],
       providers: [
         provideRouter([]),
+        { provide: RowAuditService, useValue: { getForRecord: () => of([]) } },
         { provide: AppRoleService, useValue: appRoleServiceSpy },
         { provide: LookupService, useValue: lookupServiceSpy },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'Admin' } } } }

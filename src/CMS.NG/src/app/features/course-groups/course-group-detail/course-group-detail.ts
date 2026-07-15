@@ -3,10 +3,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CourseGroupService } from '../course-group.service';
 import { CourseGroup } from '../course-group.model';
+import { RowAuditBadge } from '../../../core/row-audit/row-audit-badge';
 
 @Component({
   selector: 'app-course-group-detail',
-  imports: [ButtonModule],
+  imports: [ButtonModule, RowAuditBadge],
   templateUrl: './course-group-detail.html',
   styleUrl: './course-group-detail.scss'
 })

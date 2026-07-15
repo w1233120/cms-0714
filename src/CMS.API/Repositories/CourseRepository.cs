@@ -1,11 +1,15 @@
+using System.Data;
 using CMS.API.Data;
 using CMS.API.Models;
+using CMS.API.Services;
 using Dapper;
 
 namespace CMS.API.Repositories;
 
-public class CourseRepository(IDbConnectionFactory connectionFactory) : ICourseRepository
+public class CourseRepository(IDbConnectionFactory connectionFactory, IRowAuditWriter auditWriter) : ICourseRepository
 {
+    private const string TableName = "Course";
+
     // FK labels are joined in (LEFT JOIN for the nullable CourseGroup) so the list can show
     // partner/course-group/publish-status names instead of raw pkids.
     private const string SelectColumns = """
@@ -109,8 +113,10 @@ public class CourseRepository(IDbConnectionFactory connectionFactory) : ICourseR
     public async Task<int> CreateAsync(CourseRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        return await connection.ExecuteScalarAsync<int>("""
+        var pkid = await connection.ExecuteScalarAsync<int>("""
             INSERT INTO Course (Title, OfficialTitle, CourseId, ProdCourseId, FriendlyUrl, DisplayOrder,
                 Partner_pkid, CourseGroup_pkid, PublishStatus_pkid, ScheduleOn, ScheduleOff, Hour,
                 ListPrice, LearningCredit, Material, Objective, Target, Prerequisites, Outline,
@@ -120,14 +126,29 @@ public class CourseRepository(IDbConnectionFactory connectionFactory) : ICourseR
                 @ListPrice, @LearningCredit, @Material, @Objective, @Target, @Prerequisites, @Outline,
                 @TowardCertOrExam, @Note, @OtherInfo, @CanRepeat);
             SELECT CAST(SCOPE_IDENTITY() AS int);
-            """, request);
+            """, request, transaction);
+
+        var created = await LoadAsync(connection, transaction, pkid);
+        await auditWriter.LogInsertAsync(connection, transaction, TableName, created!);
+
+        transaction.Commit();
+        return pkid;
     }
 
     public async Task<bool> UpdateAsync(CourseRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        var rowsAffected = await connection.ExecuteAsync("""
+        var before = await LoadAsync(connection, transaction, request.Pkid);
+        if (before is null)
+        {
+            transaction.Rollback();
+            return false;
+        }
+
+        await connection.ExecuteAsync("""
             UPDATE Course
             SET Title = @Title, OfficialTitle = @OfficialTitle, CourseId = @CourseId,
                 ProdCourseId = @ProdCourseId, FriendlyUrl = @FriendlyUrl, DisplayOrder = @DisplayOrder,
@@ -137,17 +158,38 @@ public class CourseRepository(IDbConnectionFactory connectionFactory) : ICourseR
                 Objective = @Objective, Target = @Target, Prerequisites = @Prerequisites, Outline = @Outline,
                 TowardCertOrExam = @TowardCertOrExam, Note = @Note, OtherInfo = @OtherInfo, CanRepeat = @CanRepeat
             WHERE pkid = @Pkid
-            """, request);
+            """, request, transaction);
 
-        return rowsAffected > 0;
+        var after = await LoadAsync(connection, transaction, request.Pkid);
+        await auditWriter.LogUpdateAsync(connection, transaction, TableName, before, after!);
+
+        transaction.Commit();
+        return true;
     }
 
     public async Task<bool> DeleteAsync(int pkid)
     {
         using var connection = connectionFactory.CreateConnection();
-        var rowsAffected = await connection.ExecuteAsync(
-            "DELETE FROM Course WHERE pkid = @Pkid", new { Pkid = pkid });
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        return rowsAffected > 0;
+        var before = await LoadAsync(connection, transaction, pkid);
+        if (before is null)
+        {
+            transaction.Rollback();
+            return false;
+        }
+
+        await connection.ExecuteAsync(
+            "DELETE FROM Course WHERE pkid = @Pkid", new { Pkid = pkid }, transaction);
+
+        await auditWriter.LogDeleteAsync(connection, transaction, TableName, before);
+
+        transaction.Commit();
+        return true;
     }
+
+    private static async Task<Course?> LoadAsync(IDbConnection connection, IDbTransaction transaction, int pkid) =>
+        await connection.QuerySingleOrDefaultAsync<Course>(
+            $"{SelectColumns} WHERE c.pkid = @Pkid", new { Pkid = pkid }, transaction);
 }

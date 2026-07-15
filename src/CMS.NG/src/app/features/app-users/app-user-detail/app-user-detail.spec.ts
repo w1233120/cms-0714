@@ -3,6 +3,7 @@ import { WritableSignal, signal } from '@angular/core';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { of } from 'rxjs';
+import { RowAuditService } from '../../../core/row-audit/row-audit.service';
 
 import { AppUserDetail } from './app-user-detail';
 import { AppUserService } from '../app-user.service';
@@ -44,6 +45,7 @@ describe('AppUserDetail', () => {
       imports: [AppUserDetail],
       providers: [
         provideRouter([]),
+        { provide: RowAuditService, useValue: { getForRecord: () => of([]) } },
         { provide: AppUserService, useValue: appUserServiceSpy },
         { provide: LookupService, useValue: lookupServiceSpy },
         { provide: AuthService, useValue: authStub },

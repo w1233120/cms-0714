@@ -1,11 +1,15 @@
+using System.Data;
 using CMS.API.Data;
 using CMS.API.Models;
+using CMS.API.Services;
 using Dapper;
 
 namespace CMS.API.Repositories;
 
-public class PartnerRepository(IDbConnectionFactory connectionFactory) : IPartnerRepository
+public class PartnerRepository(IDbConnectionFactory connectionFactory, IRowAuditWriter auditWriter) : IPartnerRepository
 {
+    private const string TableName = "Partner";
+
     private const string SelectColumns = """
         SELECT p.pkid, p.Name, p.AppKey, p.NameOnPartnerMenu, p.NameOnCourseDetailPage,
                p.DisplayOrder, p.ImageFilename
@@ -49,35 +53,73 @@ public class PartnerRepository(IDbConnectionFactory connectionFactory) : IPartne
     public async Task<short> CreateAsync(PartnerRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        return await connection.ExecuteScalarAsync<short>("""
+        var pkid = await connection.ExecuteScalarAsync<short>("""
             INSERT INTO Partner (Name, AppKey, NameOnPartnerMenu, NameOnCourseDetailPage, DisplayOrder, ImageFilename)
             VALUES (@Name, @AppKey, @NameOnPartnerMenu, @NameOnCourseDetailPage, @DisplayOrder, @ImageFilename);
             SELECT CAST(SCOPE_IDENTITY() AS smallint);
-            """, request);
+            """, request, transaction);
+
+        var created = await LoadAsync(connection, transaction, pkid);
+        await auditWriter.LogInsertAsync(connection, transaction, TableName, created!);
+
+        transaction.Commit();
+        return pkid;
     }
 
     public async Task<bool> UpdateAsync(PartnerRequest request)
     {
         using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        var rowsAffected = await connection.ExecuteAsync("""
+        var before = await LoadAsync(connection, transaction, request.Pkid);
+        if (before is null)
+        {
+            transaction.Rollback();
+            return false;
+        }
+
+        await connection.ExecuteAsync("""
             UPDATE Partner
             SET Name = @Name, AppKey = @AppKey, NameOnPartnerMenu = @NameOnPartnerMenu,
                 NameOnCourseDetailPage = @NameOnCourseDetailPage, DisplayOrder = @DisplayOrder,
                 ImageFilename = @ImageFilename
             WHERE pkid = @Pkid
-            """, request);
+            """, request, transaction);
 
-        return rowsAffected > 0;
+        var after = await LoadAsync(connection, transaction, request.Pkid);
+        await auditWriter.LogUpdateAsync(connection, transaction, TableName, before, after!);
+
+        transaction.Commit();
+        return true;
     }
 
     public async Task<bool> DeleteAsync(short pkid)
     {
         using var connection = connectionFactory.CreateConnection();
-        var rowsAffected = await connection.ExecuteAsync(
-            "DELETE FROM Partner WHERE pkid = @Pkid", new { Pkid = pkid });
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        return rowsAffected > 0;
+        var before = await LoadAsync(connection, transaction, pkid);
+        if (before is null)
+        {
+            transaction.Rollback();
+            return false;
+        }
+
+        await connection.ExecuteAsync(
+            "DELETE FROM Partner WHERE pkid = @Pkid", new { Pkid = pkid }, transaction);
+
+        await auditWriter.LogDeleteAsync(connection, transaction, TableName, before);
+
+        transaction.Commit();
+        return true;
     }
+
+    private static async Task<Partner?> LoadAsync(IDbConnection connection, IDbTransaction transaction, short pkid) =>
+        await connection.QuerySingleOrDefaultAsync<Partner>(
+            $"{SelectColumns} WHERE p.pkid = @Pkid", new { Pkid = pkid }, transaction);
 }

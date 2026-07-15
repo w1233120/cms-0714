@@ -8,10 +8,11 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { PartnerService } from '../partner.service';
 import { PartnerRequest } from '../partner.model';
+import { RowAuditBadge } from '../../../core/row-audit/row-audit-badge';
 
 @Component({
   selector: 'app-partner-form',
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, InputNumberModule, ToastModule],
+  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, InputNumberModule, ToastModule, RowAuditBadge],
   providers: [MessageService],
   templateUrl: './partner-form.html',
   styleUrl: './partner-form.scss'

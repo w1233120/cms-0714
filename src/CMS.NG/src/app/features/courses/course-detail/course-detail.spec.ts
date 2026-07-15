@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { RowAuditService } from '../../../core/row-audit/row-audit.service';
 
 import { CourseDetail } from './course-detail';
 import { CourseService } from '../course.service';
@@ -41,6 +42,7 @@ describe('CourseDetail', () => {
       imports: [CourseDetail],
       providers: [
         provideRouter([]),
+        { provide: RowAuditService, useValue: { getForRecord: () => of([]) } },
         { provide: CourseService, useValue: courseServiceSpy },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '123' } } } }
       ]

@@ -3,10 +3,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { PartnerService } from '../partner.service';
 import { Partner } from '../partner.model';
+import { RowAuditBadge } from '../../../core/row-audit/row-audit-badge';
 
 @Component({
   selector: 'app-partner-detail',
-  imports: [ButtonModule],
+  imports: [ButtonModule, RowAuditBadge],
   templateUrl: './partner-detail.html',
   styleUrl: './partner-detail.scss'
 })

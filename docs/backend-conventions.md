@@ -158,14 +158,123 @@ themselves. Two things make it safe:
   leaves `PasswordUpdatedTime = NULL`. The endpoint returns `204` / `404` with an empty body — no
   password or hash ever crosses the wire.
 
+## Row audit
+
+`IRowAuditWriter` / `RowAuditWriter` (`Services/`, registered **scoped**) is a single cross-cutting
+service that writes **one** `dbo.RowAudit` row describing a change to *any* business table. It is
+generic over the entity type via reflection — no per-entity plumbing — exposing
+`LogInsertAsync<T>(connection, transaction, tableName, entity)`,
+`LogUpdateAsync<T>(connection, transaction, before, after)`, and
+`LogDeleteAsync<T>(connection, transaction, tableName, entity)`. Each call inserts via Dapper
+(no `pkid` — it's `IDENTITY`) **on the connection/transaction the caller passes**, so the audit row
+shares the mutation's fate.
+
+**Wired into every CRUD repository.** All seven CRUD repositories (AppRole, AppUser, PublishStatus,
+Partner, CourseGroup, Course, FeaturedPromoItem) inject `IRowAuditWriter` and, in each
+`Create`/`Update`/`Delete`:
+
+1. open the connection, `BeginTransaction()`, and run every statement (including the N-N sync for
+   AppRole/AppUser) on that transaction;
+2. **Insert** — after the row exists and its pkid is known, reload it (read model) and `LogInsertAsync`;
+   **Update** — load the read-model row **before** the change (a missing row → rollback + `false`, no
+   audit), apply the update, reload the "after", and `LogUpdateAsync(before, after)`;
+   **Delete** — load the row first (missing → rollback + `false`), delete, then `LogDeleteAsync`;
+3. `Commit()`. A thrown statement disposes the transaction → rollback → **no audit row and no change**.
+
+The audit runs *after* the successful mutation and inside the same transaction, so a failed or
+rolled-back op is never logged. `AppUser.ResetPassword` is audited the same way (an Update): since
+`PasswordHash` is never on the read model, the recorded change is the stamped `PasswordUpdatedTime` —
+proof the password was reset without exposing the hash.
+
+Because the snapshot is the **read model**, a diff that changes an FK also lists its joined display
+column (e.g. `PartnerPkid, PartnerName`); for the join-free simple entities the diff is exactly the
+changed columns. The Update diff compares **scalar** properties only — the N-N id lists
+(`AppRole.UserIds`, `AppUser.RoleIds`) are `List<string>` that `LoadAsync` leaves at their default and
+that compare by reference, so `RowAuditWriter.DescribeChanges` excludes collection properties;
+otherwise every AppRole/AppUser update would falsely report them as changed. Out of scope:
+`FeaturedPromoItem.SwapSlots` (positional reorder).
+
+**Read-back is wired.** `RowAuditController` → `RowAuditRepository` serves
+`GET /api/rowaudit?tableName=…&pkid=…`, returning a record's trail newest-first, filtered by
+`TableName` + `PrimaryKeyValues` (the numeric `pkid` as a string). The frontend `RowAuditBadge`
+consumes it — see [frontend](frontend-conventions.md#row-audit-badge).
+
+**New mutating repo — checklist:**
+
+- Insert / Update / Delete each call `IRowAuditWriter` (`LogInsertAsync` / `LogUpdateAsync` /
+  `LogDeleteAsync`) **after** the successful op, on the **same connection + transaction** as the change.
+- Update loads the read-model row **before** the change and logs the changed scalar columns; Delete
+  loads the row **first** so its first string column is captured.
+- `ActionDesc`: Insert/Delete = first string column value, Update = comma-separated changed column
+  names. `PrimaryKeyValues` = numeric `pkid` as a string. `UserName` = JWT user (fallback `"system"`).
+  Never insert `pkid` (IDENTITY).
+
+How each column is filled (all reflection logic lives in pure `public static` builders on
+`RowAuditWriter`, so it's testable without a DB or HTTP context — see `RowAuditWriterTests`):
+
+- **UserName** — the current request's JWT `userName` claim via `IHttpContextAccessor`
+  (`AddHttpContextAccessor()` in `Program.cs`), falling back to `ClaimTypes.Name`, then the literal
+  `"system"` when there is no authenticated user.
+- **PrimaryKeyValues** — the entity's `pkid` property (case-insensitive), as a string.
+- **ActionType** — `"Insert"` / `"Update"` / `"Delete"`.
+- **ActionDesc** — Insert/Delete: the value of the **first string property in declaration order**
+  (property order is resolved by `MetadataToken`, since `GetProperties()` doesn't guarantee it).
+  Update: the comma-separated **names** of the properties whose value changed between `before` and
+  `after`. Truncated to 1000 chars (`varchar(1000)`). An Update with no changes is **skipped**.
+- **DateTime** — `DateTime.Now` at write time.
+
+## Exception handling
+
+`Middleware/ExceptionHandlingMiddleware.cs` is a single cross-cutting guard against *unhandled*
+exceptions. Registered **first** in `Program.cs` (`app.UseMiddleware<ExceptionHandlingMiddleware>()`,
+before HTTPS/CORS/auth), so it wraps the whole pipeline and catches anything a controller or
+repository throws.
+
+On catch it:
+
+1. logs the full exception (message + stack trace) via `ILogger` — server-side only;
+2. writes **one** consistent response, `500 { "message": "An unexpected error occurred." }`
+   (the string is `ExceptionHandlingMiddleware.GenericMessage`). The stack trace, SQL text, and
+   connection details never reach the client.
+
+It only reacts to *thrown* exceptions, so responses produced without throwing flow through
+untouched — this is deliberate and must stay that way:
+
+- **401** — no/invalid bearer token (auth middleware, never an exception).
+- **403** — a failed `[Authorize(Roles = ...)]` check.
+- **400** — a controller's deliberate `BadRequest(new { message })` (e.g. the `AuthController`
+  password/profile validations). Its own message is preserved.
+
+So don't "fix" a 401/403/400 by throwing, and don't wrap actions in a `try/catch` that returns the
+exception detail — the generic 500 is the contract. New mutating code just lets exceptions
+propagate (the row-audit transaction still rolls back — see [Row audit](#row-audit)).
+
+The one edge case the middleware can't rewrite is an exception thrown *after* the response has
+started streaming (`Response.HasStarted`); it re-throws rather than corrupt a half-sent body.
+
+**Checklist:** let unexpected errors propagate to the middleware (no per-controller try/catch that
+returns stack traces or SQL); leave deliberate 401 / 403 / 400 (`BadRequest(new { message })`) as-is —
+they are non-throwing and must not be "fixed" by throwing.
+
+`ExceptionHandlingTests` (WebApplicationFactory) mocks `IAppRoleRepository.GetAllAsync` to throw and
+asserts `GET /api/approles` → 500 with the generic message and **no** leaked detail (no `Password=`,
+`Server=`, `SqlException`, repository name, or stack frames), then proves 401 (no token), 403
+(non-admin `reset-password`), and 400 (blank-name `PUT /api/auth/profile`) are unchanged.
+
 ## Tests
 
 `CMS.API.Tests/Controllers/{Entity}sControllerTests.cs`, xUnit + Moq on the repository interface.
 Cover each endpoint's result type and status code: list, query with a filter, get-by-id found and
 missing, create new and duplicate (409, and assert `CreateAsync` was never called), update found and
 missing, delete found and missing. Repositories are otherwise not unit-tested (they're SQL) — the
-exception is a **pure** helper extracted for testability, e.g. `AppUserRepository.HashDefaultPassword`
-(`AppUserRepositoryTests` asserts it yields uppercase-hex `SHA256(defaultPassword)`).
+exceptions are a **pure** helper extracted for testability, e.g. `AppUserRepository.HashDefaultPassword`
+(`AppUserRepositoryTests` asserts it yields uppercase-hex `SHA256(defaultPassword)`), and the
+**row-audit retrofit** (`CourseGroupRepositoryAuditTests`, `AppUserRepositoryAuditTests`), which drive
+a real repository + real `RowAuditWriter` against `Tests/Fakes/RecordingDbConnection` — a recording
+`DbConnection` that returns programmed scalars/rows and captures the emitted `dbo.RowAudit` INSERT —
+proving Insert/Update/Delete each log the right row, that a not-found change writes none and rolls
+back, that a password reset logs an Update, and that the N-N id list isn't reported as a changed
+column. The dialect SQL isn't executed, so they stay offline unit tests.
 
 `AuthControllerTests` mocks only `IAuthRepository` but uses the **real** `JwtTokenService`, then
 decodes the returned token with `JwtSecurityTokenHandler` to assert its claims and ~24h expiry — the
