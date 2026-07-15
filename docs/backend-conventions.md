@@ -25,7 +25,9 @@ repository and never enters or leaves the API. See [spec/auth/AppUser.md](../spe
 - `QueryAsync` builds `conditions` + `DynamicParameters` and joins with `AND`; an empty list means no
   `WHERE` clause at all.
 - `nchar(n)` columns: `RTRIM()` in every SELECT.
-- `DateOnly` / `TimeOnly` columns need Dapper type handlers registered in `Program.cs`.
+- `date` columns map to `DateOnly` via `DateOnlyTypeHandler`, registered **once** at the top of
+  `Program.cs` — don't re-register it (`Course.ScheduleOn`/`ScheduleOff`, `FeaturedPromoItem.ScheduleOn`).
+  No `time` column exists yet, so there is **no** `TimeOnlyTypeHandler`; add one before introducing a `time` column.
 
 ## N-N relationships
 

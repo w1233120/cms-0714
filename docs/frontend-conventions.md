@@ -59,6 +59,30 @@ Read-only cards mirroring the form, plus any special actions (e.g. the 重設密
 Dapper returns `datetime` with `Kind = Unspecified`, so the JSON has no timezone suffix. Append
 `'Z'` before parsing or piping: `{{ user.passwordUpdatedTime + 'Z' | date: 'yyyy/MM/dd HH:mm' }}`.
 
+## Local date serialization
+
+`date` columns travel as `'yyyy-MM-dd'` strings. Convert `Date` ↔ string with **local** components
+(`getFullYear()`, `getMonth()+1`, `getDate()`), never `toISOString().split('T')[0]` — that shifts
+UTC+8 dates back a day. Helpers: `features/courses/date.util.ts`, `features/featured-promo-items/week.util.ts`.
+
+## Third-party (CommonJS) libraries
+
+A CommonJS dependency (e.g. `qrcode`, used by `features/courses/course-qr-code/` for the Course-detail
+QR code) must be listed under `allowedCommonJsDependencies` in `angular.json`, or the build emits an
+optimization-bailout warning.
+
+## App shell & scrolling
+
+`.app-shell` is `height: 100dvh` so `.app-content` (the routed-page container) is the **internal**
+scroll region — the topbar and sidebar stay fixed and only page content scrolls. `min-height` here
+would make the whole window scroll instead and break in-page `position: sticky`. A routed page that
+hosts a sticky child (e.g. the Course form's pinned Save/Cancel toolbar, `position: sticky; top: 0`)
+also needs `:host { display: block }`.
+
+## Inline table editing
+
+Double-click cell editing on a list table — see [inline-edit.md](inline-edit.md).
+
 ## Sidebar
 
 Driven by the `navGroups` array in `app.ts` (group label + icon + items); `app.html` just renders it.
